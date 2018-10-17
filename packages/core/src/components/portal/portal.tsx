@@ -55,8 +55,8 @@ export class Portal extends React.Component<IPortalProps, IPortalState> {
     public static displayName = `${DISPLAYNAME_PREFIX}.Portal`;
     public static contextTypes = REACT_CONTEXT_TYPES;
     public static defaultProps: IPortalProps = {
-        container: typeof document !== 'undefined' ? document.body : null,
-    }
+        container: typeof document !== "undefined" ? document.body : null,
+    };
 
     public context: IPortalContext;
     public state: IPortalState = { hasMounted: false };

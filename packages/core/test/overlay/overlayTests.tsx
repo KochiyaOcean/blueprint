@@ -62,7 +62,7 @@ describe("<Overlay>", () => {
         mountWrapper(<Overlay isOpen={false}>{createOverlayContents()}</Overlay>);
         wrapper.setProps({ isOpen: true });
         assert.strictEqual(wrapper.state().document, document);
-    })
+    });
 
     it("renders Portal after first opened", () => {
         mountWrapper(<Overlay isOpen={false}>{createOverlayContents()}</Overlay>);
@@ -203,7 +203,7 @@ describe("<Overlay>", () => {
                     {createOverlayContents()}
                 </Overlay>,
             );
-            overlay.setState({ document })
+            overlay.setState({ document });
             const portal = overlay.find(Portal);
             assert.isTrue(portal.exists(), "missing Portal");
             assert.lengthOf(portal.find("strong"), 1, "missing h1");
