@@ -54,6 +54,9 @@ const REACT_CONTEXT_TYPES: ValidationMap<IPortalContext> = {
 export class Portal extends React.Component<IPortalProps, IPortalState> {
     public static displayName = `${DISPLAYNAME_PREFIX}.Portal`;
     public static contextTypes = REACT_CONTEXT_TYPES;
+    public static defaultProps: IPortalProps = {
+        container: typeof document !== 'undefined' ? document.body : null,
+    }
 
     public context: IPortalContext;
     public state: IPortalState = { hasMounted: false };
@@ -73,7 +76,7 @@ export class Portal extends React.Component<IPortalProps, IPortalState> {
 
     public componentDidMount() {
         this.portalElement = this.createContainerElement();
-        (this.props.container || document.body).appendChild(this.portalElement);
+        this.props.container.appendChild(this.portalElement);
         this.setState({ hasMounted: true }, this.props.onChildrenMount);
         if (cannotCreatePortal) {
             this.unstableRenderNoPortal();
