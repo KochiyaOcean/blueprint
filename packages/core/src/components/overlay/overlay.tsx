@@ -223,7 +223,7 @@ export class Overlay extends React.PureComponent<IOverlayProps, IOverlayState> {
             if (!this.state.document) {
                 return <div ref={this.refHandlers.mountpoint} />;
             } else {
-                return <Portal document={this.state.document}>{transitionGroup}</Portal>;
+                return <Portal container={this.state.document.body}>{transitionGroup}</Portal>;
             }
         } else {
             return transitionGroup;
