@@ -23,9 +23,9 @@ export interface IPortalProps extends IProps {
     onChildrenMount?: () => void;
 
     /**
-     * The document object of DOM that children will be mounted to. Default value is `window.document`.
+     * The HTML element that children will be mounted to. Default value is `document.body`.
      */
-    document?: Document;
+    container?: HTMLElement;
 }
 
 export interface IPortalState {
@@ -73,7 +73,7 @@ export class Portal extends React.Component<IPortalProps, IPortalState> {
 
     public componentDidMount() {
         this.portalElement = this.createContainerElement();
-        (this.props.document || document).body.appendChild(this.portalElement);
+        (this.props.container || document.body).appendChild(this.portalElement);
         this.setState({ hasMounted: true }, this.props.onChildrenMount);
         if (cannotCreatePortal) {
             this.unstableRenderNoPortal();
@@ -101,7 +101,7 @@ export class Portal extends React.Component<IPortalProps, IPortalState> {
     }
 
     private createContainerElement() {
-        const container = (this.props.document || document).createElement("div");
+        const container = document.createElement("div");
         container.classList.add(Classes.PORTAL);
         maybeAddClass(container.classList, this.props.className);
         if (this.context != null) {
