@@ -58,10 +58,17 @@ describe("<Overlay>", () => {
         overlay.unmount();
     });
 
+    it("finds parent document object after loaded", () => {
+        mountWrapper(<Overlay isOpen={false}>{createOverlayContents()}</Overlay>);
+        wrapper.setProps({ isOpen: true });
+        assert.strictEqual(wrapper.state().document, document);
+    })
+
     it("renders Portal after first opened", () => {
         mountWrapper(<Overlay isOpen={false}>{createOverlayContents()}</Overlay>);
         assert.lengthOf(wrapper.find(Portal), 0, "unexpected Portal");
         wrapper.setProps({ isOpen: true });
+        wrapper.update();
         assert.lengthOf(wrapper.find(Portal), 1, "expected Portal");
     });
 
@@ -90,6 +97,7 @@ describe("<Overlay>", () => {
         mountWrapper(<Overlay isOpen={false}>{createOverlayContents()}</Overlay>);
         assert.lengthOf(wrapper.find(Portal), 0, "unexpected Portal");
         wrapper.setProps({ isOpen: true });
+        wrapper.update();
         assert.lengthOf(wrapper.find(Portal), 1, "expected Portal");
     });
 
@@ -195,6 +203,7 @@ describe("<Overlay>", () => {
                     {createOverlayContents()}
                 </Overlay>,
             );
+            overlay.setState({ document })
             const portal = overlay.find(Portal);
             assert.isTrue(portal.exists(), "missing Portal");
             assert.lengthOf(portal.find("strong"), 1, "missing h1");
