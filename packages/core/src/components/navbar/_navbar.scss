@@ -29,7 +29,7 @@ Styleguide navbar
 
 $navbar-padding: $pt-grid-size * 1.5 !default;
 
-$navbar-background-color: $white !default;
+$navbar-background-color: rgba($white, 0.9) !default;
 $dark-navbar-background-color: $dark-gray5 !default;
 
 .#{$ns}-navbar {

@@ -13,7 +13,7 @@ $input-transition: box-shadow $pt-transition-duration $pt-transition-ease;
 $input-color: $pt-text-color !default;
 $input-color-disabled: $button-color-disabled !default;
 $input-placeholder-color: $pt-text-color-disabled !default;
-$input-background-color: $white !default;
+$input-background-color: rgba($white, 0.9) !default;
 $input-background-color-disabled: rgba($light-gray1, 0.5) !default;
 $input-shadow-color-focus: $pt-intent-primary !default;
 

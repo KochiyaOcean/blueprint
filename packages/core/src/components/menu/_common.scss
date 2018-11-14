@@ -21,7 +21,7 @@ $menu-item-padding-vertical: ($pt-button-height - $menu-item-line-height) / 2 !d
 $menu-item-padding-vertical-large:
   ($pt-button-height-large - $menu-item-line-height-large) / 2 !default;
 
-$menu-background-color: $white !default;
+$menu-background-color: rgba($white, 0.9) !default;
 $dark-menu-background-color: $dark-gray4 !default;
 
 $menu-item-color-hover: $minimal-button-background-color-hover !default;
