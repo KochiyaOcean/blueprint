@@ -328,7 +328,7 @@ Styleguide preformatted
   justify-content: center;
   border-radius: $pt-border-radius;
   box-shadow: $pt-elevation-shadow-1;
-  background: $white;
+  background: rgba($white, 0.9);
   min-width: $pt-button-height-small;
   height: $pt-button-height-small;
   padding: $pt-border-radius ($pt-border-radius * 2);

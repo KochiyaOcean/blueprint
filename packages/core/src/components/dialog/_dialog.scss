@@ -91,7 +91,7 @@ $dialog-padding: $pt-grid-size * 2 !default;
   align-items: center;
   border-radius: $dialog-border-radius $dialog-border-radius 0 0;
   box-shadow: 0 1px 0 $pt-divider-black;
-  background: $white;
+  background: rgba($white, 0.9);
   min-height: $pt-icon-size-large + $dialog-padding;
   padding-right: $dialog-padding / 4;
   padding-left: $dialog-padding;

@@ -4,7 +4,7 @@
 @import "../../common/variables";
 @import "../../common/react-transition";
 
-$popover-background-color: $white !default;
+$popover-background-color: rgba($white, 0.9) !default;
 $dark-popover-background-color: $dark-gray4 !default;
 
 // $arrow-offset: amount to shift arrow along edge of popover

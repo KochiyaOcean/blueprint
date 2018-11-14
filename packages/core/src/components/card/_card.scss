@@ -23,7 +23,7 @@ Styleguide card
 
 $card-padding: $pt-grid-size * 2 !default;
 
-$card-background-color: $white !default;
+$card-background-color: rgba($white, 0.6) !default;
 $dark-card-background-color: rgba($dark-gray4, 0.6) !default;
 
 $elevation-shadows: (

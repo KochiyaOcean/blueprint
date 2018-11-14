@@ -309,7 +309,7 @@ $control-indicator-spacing: $pt-grid-size !default;
   $dark-switch-checked-background-color-active: $control-checked-background-color-active !default;
   $dark-switch-checked-background-color-disabled: rgba($blue1, 0.5) !default;
 
-  $switch-indicator-background-color: $white !default;
+  $switch-indicator-background-color: rgba($white, 0.9) !default;
   $switch-indicator-background-color-disabled: rgba($white, 0.8) !default;
   $dark-switch-indicator-background-color: $dark-gray5 !default;
   $dark-switch-indicator-background-color-disabled: rgba($black, 0.4) !default;
