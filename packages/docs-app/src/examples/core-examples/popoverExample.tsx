@@ -1,10 +1,19 @@
 /*
  * Copyright 2017 Palantir Technologies, Inc. All rights reserved.
  *
- * Licensed under the terms of the LICENSE file distributed with this project.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-import PopperJS from "popper.js";
 import * as React from "react";
 
 import {
@@ -22,7 +31,9 @@ import {
     MenuItem,
     Popover,
     PopoverInteractionKind,
-    Position,
+    PopoverPosition,
+    PopperBoundary,
+    PopperModifiers,
     RadioGroup,
     Slider,
     Switch,
@@ -42,27 +53,28 @@ const INTERACTION_KINDS = [
     { label: "Hover (target only)", value: PopoverInteractionKind.HOVER_TARGET_ONLY.toString() },
 ];
 
-const VALID_POSITIONS: Array<Position | "auto" | "auto-start" | "auto-end"> = [
-    "auto",
-    "auto-start",
-    "auto-end",
-    Position.TOP_LEFT,
-    Position.TOP,
-    Position.TOP_RIGHT,
-    Position.RIGHT_TOP,
-    Position.RIGHT,
-    Position.RIGHT_BOTTOM,
-    Position.BOTTOM_LEFT,
-    Position.BOTTOM,
-    Position.BOTTOM_RIGHT,
-    Position.LEFT_TOP,
-    Position.LEFT,
-    Position.LEFT_BOTTOM,
+const VALID_POSITIONS: PopoverPosition[] = [
+    PopoverPosition.AUTO,
+    PopoverPosition.AUTO_START,
+    PopoverPosition.AUTO_END,
+    PopoverPosition.TOP_LEFT,
+    PopoverPosition.TOP,
+    PopoverPosition.TOP_RIGHT,
+    PopoverPosition.RIGHT_TOP,
+    PopoverPosition.RIGHT,
+    PopoverPosition.RIGHT_BOTTOM,
+    PopoverPosition.BOTTOM_LEFT,
+    PopoverPosition.BOTTOM,
+    PopoverPosition.BOTTOM_RIGHT,
+    PopoverPosition.LEFT_TOP,
+    PopoverPosition.LEFT,
+    PopoverPosition.LEFT_BOTTOM,
 ];
 
 const POPPER_DOCS = "https://popper.js.org/popper-documentation.html#modifiers";
 
 export interface IPopoverExampleState {
+    boundary?: PopperBoundary;
     canEscapeKeyClose?: boolean;
     exampleIndex?: number;
     hasBackdrop?: boolean;
@@ -70,14 +82,15 @@ export interface IPopoverExampleState {
     interactionKind?: PopoverInteractionKind;
     isOpen?: boolean;
     minimal?: boolean;
-    modifiers?: PopperJS.Modifiers;
-    position?: Position | "auto" | "auto-start" | "auto-end";
+    modifiers?: PopperModifiers;
+    position?: PopoverPosition;
     sliderValue?: number;
     usePortal?: boolean;
 }
 
 export class PopoverExample extends React.PureComponent<IExampleProps, IPopoverExampleState> {
     public state: IPopoverExampleState = {
+        boundary: "viewport",
         canEscapeKeyClose: true,
         exampleIndex: 0,
         hasBackdrop: false,
@@ -89,7 +102,7 @@ export class PopoverExample extends React.PureComponent<IExampleProps, IPopoverE
             arrow: { enabled: true },
             flip: { enabled: true },
             keepTogether: { enabled: true },
-            preventOverflow: { enabled: true, boundariesElement: "scrollParent" },
+            preventOverflow: { enabled: true },
         },
         position: "auto",
         sliderValue: 5,
@@ -101,20 +114,8 @@ export class PopoverExample extends React.PureComponent<IExampleProps, IPopoverE
         const hasBackdrop = this.state.hasBackdrop && interactionKind === PopoverInteractionKind.CLICK;
         this.setState({ interactionKind, hasBackdrop });
     });
-    private handlePositionChange = handleStringChange((position: Position | "auto" | "auto-start" | "auto-end") =>
-        this.setState({ position }),
-    );
-    private handleBoundaryChange = handleStringChange((boundary: PopperJS.Boundary) =>
-        this.setState({
-            modifiers: {
-                ...this.state.modifiers,
-                preventOverflow: {
-                    boundariesElement: boundary,
-                    enabled: boundary.length > 0,
-                },
-            },
-        }),
-    );
+    private handlePositionChange = handleStringChange((position: PopoverPosition) => this.setState({ position }));
+    private handleBoundaryChange = handleStringChange((boundary: PopperBoundary) => this.setState({ boundary }));
 
     private toggleEscapeKey = handleBooleanChange(canEscapeKeyClose => this.setState({ canEscapeKeyClose }));
     private toggleIsOpen = handleBooleanChange(isOpen => this.setState({ isOpen }));
@@ -142,7 +143,8 @@ export class PopoverExample extends React.PureComponent<IExampleProps, IPopoverE
                         {this.getContents(exampleIndex)}
                     </Popover>
                     <p>
-                        Scroll around this container to experiment<br />
+                        Scroll around this container to experiment
+                        <br />
                         with <Code>flip</Code> and <Code>preventOverflow</Code> modifiers.
                     </p>
                 </div>
@@ -207,7 +209,7 @@ export class PopoverExample extends React.PureComponent<IExampleProps, IPopoverE
                     <div style={{ marginTop: 5 }} />
                     <HTMLSelect
                         disabled={!preventOverflow.enabled}
-                        value={preventOverflow.boundariesElement.toString()}
+                        value={this.state.boundary}
                         onChange={this.handleBoundaryChange}
                     >
                         <option value="scrollParent">scrollParent</option>
@@ -276,7 +278,7 @@ export class PopoverExample extends React.PureComponent<IExampleProps, IPopoverE
 
     private handleSliderChange = (value: number) => this.setState({ sliderValue: value });
 
-    private getModifierChangeHandler(name: keyof PopperJS.Modifiers) {
+    private getModifierChangeHandler(name: keyof PopperModifiers) {
         return handleBooleanChange(enabled => {
             this.setState({
                 modifiers: {

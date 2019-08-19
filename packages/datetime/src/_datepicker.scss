@@ -1,5 +1,5 @@
 // Copyright 2015 Palantir Technologies, Inc. All rights reserved.
-// Licensed under the terms of the LICENSE file distributed with this project.
+// Licensed under the Apache License, Version 2.0.
 
 @import "~@blueprintjs/core/src/components/popover/common";
 @import "./common";
@@ -35,6 +35,11 @@ $header-margin: ($header-height - $pt-input-height) / 2 !default;
     &:focus {
       outline: none;
     }
+  }
+
+  .#{$ns}-datepicker-day-wrapper {
+    border-radius: $pt-border-radius;
+    padding: 7px;
   }
 
   .DayPicker-Month {
@@ -97,6 +102,12 @@ $header-margin: ($header-height - $pt-input-height) / 2 !default;
       color: $pt-text-color-disabled;
     }
 
+    &.DayPicker-Day--isToday {
+      .#{$ns}-datepicker-day-wrapper {
+        border: 1px solid $pt-divider-black;
+      }
+    }
+
     &:hover,
     &:focus {
       background: $datepicker-day-background-color-hover;
@@ -135,8 +146,12 @@ $header-margin: ($header-height - $pt-input-height) / 2 !default;
   left: 0;
   height: $pt-button-height;
 
-  > :first-child {
+  > .DayPicker-NavButton--prev {
     margin-right: auto;
+  }
+
+  > .DayPicker-NavButton--next {
+    margin-left: auto;
   }
 }
 
@@ -190,6 +205,12 @@ $header-margin: ($header-height - $pt-input-height) / 2 !default;
   .DayPicker-Day {
     &.DayPicker-Day--outside {
       color: $pt-dark-text-color-disabled;
+    }
+
+    &.DayPicker-Day--isToday {
+      .#{$ns}-datepicker-day-wrapper {
+        border: 1px solid $pt-dark-divider-white;
+      }
     }
 
     &:hover,

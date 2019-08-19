@@ -1,7 +1,17 @@
 /*
  * Copyright 2016 Palantir Technologies, Inc. All rights reserved.
  *
- * Licensed under the terms of the LICENSE file distributed with this project.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { Classes, H5, HTMLSelect, Label, Switch } from "@blueprintjs/core";
@@ -21,6 +31,7 @@ import { PrecisionSelect } from "./common/precisionSelect";
 
 export interface IDateRangePickerExampleState {
     allowSingleDayRange?: boolean;
+    singleMonthOnly?: boolean;
     contiguousCalendarMonths?: boolean;
     dateRange?: DateRange;
     maxDateIndex?: number;
@@ -70,6 +81,7 @@ export class DateRangePickerExample extends React.PureComponent<IExampleProps, I
         minDateIndex: 0,
         reverseMonthAndYearMenus: false,
         shortcuts: true,
+        singleMonthOnly: false,
     };
 
     private handleMaxDateIndexChange = handleNumberChange(maxDateIndex => this.setState({ maxDateIndex }));
@@ -82,6 +94,7 @@ export class DateRangePickerExample extends React.PureComponent<IExampleProps, I
         this.setState({ reverseMonthAndYearMenus }),
     );
     private toggleSingleDay = handleBooleanChange(allowSingleDayRange => this.setState({ allowSingleDayRange }));
+    private toggleSingleMonth = handleBooleanChange(singleMonthOnly => this.setState({ singleMonthOnly }));
     private toggleShortcuts = handleBooleanChange(shortcuts => this.setState({ shortcuts }));
     private toggleContiguousCalendarMonths = handleBooleanChange(contiguousCalendarMonths => {
         this.setState({ contiguousCalendarMonths });
@@ -114,6 +127,11 @@ export class DateRangePickerExample extends React.PureComponent<IExampleProps, I
                         checked={this.state.allowSingleDayRange}
                         label="Allow single day range"
                         onChange={this.toggleSingleDay}
+                    />
+                    <Switch
+                        checked={this.state.singleMonthOnly}
+                        label="Single month only"
+                        onChange={this.toggleSingleMonth}
                     />
                     <Switch
                         checked={this.state.contiguousCalendarMonths}
@@ -165,7 +183,9 @@ export class DateRangePickerExample extends React.PureComponent<IExampleProps, I
             <Label>
                 {label}
                 <HTMLSelect value={selectedValue} onChange={onChange}>
-                    {options.map((opt, i) => <option key={i} value={i} label={opt.label} />)}
+                    {options.map((opt, i) => (
+                        <option key={i} value={i} label={opt.label} />
+                    ))}
                 </HTMLSelect>
             </Label>
         );

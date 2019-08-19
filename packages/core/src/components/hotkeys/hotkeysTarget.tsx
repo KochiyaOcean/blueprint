@@ -1,7 +1,17 @@
 /*
  * Copyright 2016 Palantir Technologies, Inc. All rights reserved.
  *
- * Licensed under the terms of the LICENSE file distributed with this project.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import * as React from "react";
@@ -87,17 +97,22 @@ export function HotkeysTarget<T extends IConstructor<IHotkeysTargetComponent>>(W
                 if (this.localHotkeysEvents.count() > 0) {
                     const tabIndex = hotkeys.props.tabIndex === undefined ? 0 : hotkeys.props.tabIndex;
 
-                    const { keyDown: existingKeyDown, keyUp: existingKeyUp } = element.props;
-                    const onKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+                    const { onKeyDown: existingKeyDown, onKeyUp: existingKeyUp } = element.props;
+
+                    const handleKeyDownWrapper = (e: React.KeyboardEvent<HTMLElement>) => {
                         this.localHotkeysEvents.handleKeyDown(e.nativeEvent as KeyboardEvent);
                         safeInvoke(existingKeyDown, e);
                     };
 
-                    const onKeyUp = (e: React.KeyboardEvent<HTMLElement>) => {
+                    const handleKeyUpWrapper = (e: React.KeyboardEvent<HTMLElement>) => {
                         this.localHotkeysEvents.handleKeyUp(e.nativeEvent as KeyboardEvent);
                         safeInvoke(existingKeyUp, e);
                     };
-                    return React.cloneElement(element, { tabIndex, onKeyDown, onKeyUp });
+                    return React.cloneElement(element, {
+                        onKeyDown: handleKeyDownWrapper,
+                        onKeyUp: handleKeyUpWrapper,
+                        tabIndex,
+                    });
                 }
             }
             return element;

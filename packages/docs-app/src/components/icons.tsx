@@ -1,15 +1,22 @@
 /*
  * Copyright 2015 Palantir Technologies, Inc. All rights reserved.
  *
- * Licensed under the terms of the LICENSE file distributed with this project.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
-import * as React from "react";
 
 import { Classes, H3, InputGroup, NonIdealState } from "@blueprintjs/core";
 import { smartSearch } from "@blueprintjs/docs-theme";
-
-import classNames from "classnames";
+import * as React from "react";
 import { DocsIcon, IDocsIconProps as IIcon } from "./docsIcon";
 
 const ICONS_PER_ROW = 5;
@@ -46,7 +53,9 @@ export class Icons extends React.PureComponent<IIconsProps, IIconsState> {
         return (
             <div className="docs-icons">
                 <InputGroup
-                    className={classNames(Classes.LARGE, Classes.FILL)}
+                    autoFocus={true}
+                    className={Classes.FILL}
+                    large={true}
                     leftIcon="search"
                     placeholder="Search for icons..."
                     onChange={this.handleFilterChange}

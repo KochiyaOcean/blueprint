@@ -1,8 +1,18 @@
 /*
-* Copyright 2018 Palantir Technologies, Inc. All rights reserved.
-*
-* Licensed under the terms of the LICENSE file distributed with this project.
-*/
+ * Copyright 2018 Palantir Technologies, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import React from "react";
 
@@ -48,16 +58,6 @@ const ICON_CONTENTS: Record<string, JSX.Element> = {
         <g fillRule="evenodd">
             <path d="M11.657 5l2.058 4.168 4.6.669-3.329 3.245.786 4.581-4.115-2.163V5z" opacity={OPACITY} />
             <path d="M11.657 5v10.5l-4.114 2.163.786-4.581L5 9.837l4.6-.669L11.657 5z" />
-        </g>
-    ),
-
-    labs: (
-        <g fillRule="evenodd">
-            <path
-                d="M10 9V7h-.5a.5.5 0 0 1 0-1h5a.5.5 0 0 1 0 1H14v2l3.927 5.89A2 2 0 0 1 16.263 18H7.737a2 2 0 0 1-1.664-3.11L10 9z"
-                opacity={OPACITY}
-            />
-            <path d="M17.281 13.917l.649.974A2 2 0 0 1 16.266 18H7.74a2 2 0 0 1-1.664-3.11l2.25-3.375c1.363-.21 2.755.165 4.177 1.124 1.255.847 2.848 1.273 4.778 1.278z" />
         </g>
     ),
 

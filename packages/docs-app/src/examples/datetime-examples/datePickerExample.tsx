@@ -1,7 +1,17 @@
 /*
  * Copyright 2016 Palantir Technologies, Inc. All rights reserved.
  *
- * Licensed under the terms of the LICENSE file distributed with this project.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { Classes, H5, Switch } from "@blueprintjs/core";
@@ -14,6 +24,7 @@ import { PrecisionSelect } from "./common/precisionSelect";
 
 export interface IDatePickerExampleState {
     date: Date | null;
+    highlightCurrentDay: boolean;
     reverseMonthAndYearMenus: boolean;
     showActionsBar: boolean;
     timePrecision: TimePrecision | undefined;
@@ -22,11 +33,13 @@ export interface IDatePickerExampleState {
 export class DatePickerExample extends React.PureComponent<IExampleProps, IDatePickerExampleState> {
     public state: IDatePickerExampleState = {
         date: null,
+        highlightCurrentDay: false,
         reverseMonthAndYearMenus: false,
         showActionsBar: false,
         timePrecision: undefined,
     };
 
+    private toggleHighlight = handleBooleanChange(highlightCurrentDay => this.setState({ highlightCurrentDay }));
     private toggleActionsBar = handleBooleanChange(showActionsBar => this.setState({ showActionsBar }));
     private toggleReverseMenus = handleBooleanChange(reverse => this.setState({ reverseMonthAndYearMenus: reverse }));
     private handlePrecisionChange = handleStringChange((p: TimePrecision | "none") =>
@@ -40,6 +53,11 @@ export class DatePickerExample extends React.PureComponent<IExampleProps, IDateP
             <>
                 <H5>Props</H5>
                 <Switch checked={props.showActionsBar} label="Show actions bar" onChange={this.toggleActionsBar} />
+                <Switch
+                    checked={props.highlightCurrentDay}
+                    label="Highlight current day"
+                    onChange={this.toggleHighlight}
+                />
                 <Switch
                     checked={props.reverseMonthAndYearMenus}
                     label="Reverse month and year menus"
