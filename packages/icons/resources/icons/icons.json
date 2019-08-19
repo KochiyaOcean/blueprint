@@ -3169,5 +3169,138 @@
     "tags": "correct, cleanse, clear, purify, stars",
     "group": "action",
     "content": "\\e7c5"
+  },
+    {
+    "displayName": "Table: filtered",
+    "iconName": "th-filtered",
+    "tags": "index, rows, columns, agenda, list, spreadsheet, filtering, funnel",
+    "group": "table",
+    "content": "\\e7c6"
+  },
+    {
+    "displayName": "Lifesaver",
+    "iconName": "lifesaver",
+    "tags": "help, support, aid, advice",
+    "group": "miscellaneous",
+    "content": "\\e7c7"
+  },
+    {
+    "displayName": "Cube",
+    "iconName": "cube",
+    "tags": "shape, 3d, object",
+    "group": "miscellaneous",
+    "content": "\\e7c8"
+  },
+    {
+    "displayName": "Cube: add",
+    "iconName": "cube-add",
+    "tags": "shape, 3d, object",
+    "group": "miscellaneous",
+    "content": "\\e7c9"
+  },
+    {
+    "displayName": "Cube: remove",
+    "iconName": "cube-remove",
+    "tags": "shape, 3d, object",
+    "group": "miscellaneous",
+    "content": "\\e7d0"
+  },
+  {
+    "displayName": "Inbox: filtered",
+    "iconName": "inbox-filtered",
+    "tags": "folder, mail, file, message, funnel",
+    "group": "file",
+    "content": "\\e7d1"
+  },
+  {
+    "displayName": "Inbox: geo",
+    "iconName": "inbox-geo",
+    "tags": "folder, mail, file, message, geography, location, area, globe",
+    "group": "file",
+    "content": "\\e7d2"
+  },
+  {
+    "displayName": "Inbox: search",
+    "iconName": "inbox-search",
+    "tags": "folder, mail, file, message, inspection, exploration, magnifying glass",
+    "group": "file",
+    "content": "\\e7d3"
+  },
+  {
+    "displayName": "Inbox: update",
+    "iconName": "inbox-update",
+    "tags": "folder, mail, file, message, notifications, warning",
+    "group": "file",
+    "content": "\\e7d4"
+  },
+  {
+    "displayName": "Inheritance",
+    "iconName": "inheritance",
+    "tags": "arrows, derive",
+    "group": "action",
+    "content": "\\e7d5"
+  },
+  {
+    "displayName": "Reset",
+    "iconName": "reset",
+    "tags": "circle, arrow",
+    "group": "action",
+    "content": "\\e7d6"
+  },
+  {
+    "displayName": "Filter: open",
+    "iconName": "filter-open",
+    "tags": "filtering, funnel, tube, pipe",
+    "group": "action",
+    "content": "\\e7d7"
+  },
+  {
+    "displayName": "Table: disconnect",
+    "iconName": "th-disconnect",
+    "tags": "index, rows, columns, agenda, list, spreadsheet, unlink, detach, remove",
+    "group": "table",
+    "content": "\\e7d8"
+  },
+  {
+    "displayName": "Equals",
+    "iconName": "equals",
+    "tags": "mathematical, equations, expression, formula",
+    "group": "action",
+    "content": "\\e7d9"
+  },
+  {
+    "displayName": "Not equal to",
+    "iconName": "not-equal-to",
+    "tags": "mathematical, equations, expression, formula",
+    "group": "action",
+    "content": "\\e7e0"
+  },
+  {
+    "displayName": "Greater than",
+    "iconName": "greater-than",
+    "tags": "mathematical, equations, expression, formula",
+    "group": "action",
+    "content": "\\e7e1"
+  },
+  {
+    "displayName": "Greater than or equal to",
+    "iconName": "greater-than-or-equal-to",
+    "tags": "mathematical, equations, expression, formula",
+    "group": "action",
+    "content": "\\e7e2"
+  },
+  {
+    "displayName": "Less than",
+    "iconName": "less-than",
+    "tags": "mathematical, equations, expression, formula",
+    "group": "action",
+    "content": "\\e7e3"
+  },
+  {
+    "displayName": "Less than or equal to",
+    "iconName": "less-than-or-equal-to",
+    "tags": "mathematical, equations, expression, formula",
+    "group": "action",
+    "content": "\\e7e4"
   }
 ]

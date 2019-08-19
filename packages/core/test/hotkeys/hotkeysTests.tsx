@@ -1,12 +1,22 @@
 /*
  * Copyright 2016 Palantir Technologies, Inc. All rights reserved.
  *
- * Licensed under the terms of the LICENSE file distributed with this project.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 // tslint:disable max-classes-per-file
 
-import { expect } from "chai";
+import { assert, expect } from "chai";
 import { mount, ReactWrapper } from "enzyme";
 import * as React from "react";
 import { SinonSpy, spy } from "sinon";
@@ -67,6 +77,8 @@ describe("Hotkeys", () => {
             disabled?: boolean;
             preventDefault?: boolean;
             stopPropagation?: boolean;
+            onKeyUp?: React.KeyboardEventHandler<HTMLElement>;
+            onKeyDown?: React.KeyboardEventHandler<HTMLElement>;
         }
 
         @HotkeysTarget
@@ -118,7 +130,7 @@ describe("Hotkeys", () => {
 
             public render() {
                 return (
-                    <div>
+                    <div onKeyUp={this.props.onKeyUp} onKeyDown={this.props.onKeyDown}>
                         <input type="text" />
                         <input type="number" />
                         <input type="password" />
@@ -222,6 +234,22 @@ describe("Hotkeys", () => {
             expect(handleKeyDown.called).to.be.true;
             const testCombo = getKeyComboString(handleKeyDown.firstCall.args[0]);
             expect(testCombo).to.equal(combo);
+        });
+
+        it("invokes onKeyUp & onKeyDown props", () => {
+            const handlers = {
+                onKeyDown: spy(),
+                onKeyUp: spy(),
+            };
+
+            comp = mount(<TestComponent {...handlers} />, { attachTo });
+            const node = comp.getDOMNode();
+
+            dispatchTestKeyboardEvent(node, "keydown", "1");
+            assert.equal(handlers.onKeyDown.callCount, 1);
+            assert.equal(handlers.onKeyUp.callCount, 0);
+            dispatchTestKeyboardEvent(node, "keyup", "1");
+            assert.equal(handlers.onKeyUp.callCount, 1);
         });
 
         function runHotkeySuiteForKeyEvent(eventName: "keydown" | "keyup") {

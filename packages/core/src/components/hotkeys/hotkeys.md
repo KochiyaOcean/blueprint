@@ -2,7 +2,7 @@
 
 Hotkeys enable you to create interactions based on user keyboard events.
 
-To add hotkeys to your React component, use the `@HotkeyTarget` class decorator
+To add hotkeys to your React component, use the `@HotkeysTarget` class decorator
 and add a `renderHotkeys()` method. The decorator will call `renderHotkeys()`
 and attach the appropriate key listeners.
 
@@ -43,6 +43,14 @@ export class MyComponent extends React.Component<{}, {}> {
 }
 ```
 
+<div class="@ns-callout @ns-intent-primary @ns-icon-info-sign">
+
+Your decorated component must return a single DOM element in its `render()` method,
+not a custom React component. This constraint allows `HotkeysTarget` to inject
+event handlers without creating an extra wrapper element.
+
+</div>
+
 @### Decorator
 
 The `@HotkeysTarget` decorator allows you to easily add global and local
@@ -59,7 +67,7 @@ Wrap your `Hotkey`s in the `Hotkeys` element. For example:
 <Hotkeys>
     <Hotkey label="Quit" combo="ctrl+q" global onKeyDown={handleQuit} />
     <Hotkey label="Save" combo="ctrl+s" group="File" onKeyDown={handleSave} />
-</Hotkey>
+</Hotkeys>
 ```
 
 @interface IHotkeysProps

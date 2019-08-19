@@ -1,7 +1,17 @@
 /*
  * Copyright 2016 Palantir Technologies, Inc. All rights reserved.
  *
- * Licensed under the terms of the LICENSE file distributed with this project.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import classNames from "classnames";
@@ -68,9 +78,15 @@ export interface IEditableTextProps extends IIntentProps, IProps {
     /**
      * Whether the entire text field should be selected on focus.
      * If `false`, the cursor is placed at the end of the text.
+     * This prop is ignored on inputs with type other then text, search, url, tel and password. See https://html.spec.whatwg.org/multipage/input.html#do-not-apply for details.
      * @default false
      */
     selectAllOnFocus?: boolean;
+
+    /**
+     * The type of input that should be shown, when not `multiline`.
+     */
+    type?: string;
 
     /** Text value of controlled input. */
     value?: string;
@@ -116,6 +132,7 @@ export class EditableText extends AbstractPureComponent<IEditableTextProps, IEdi
         minWidth: 80,
         multiline: false,
         placeholder: "Click to Edit",
+        type: "text",
     };
 
     private valueElement: HTMLSpanElement;
@@ -126,9 +143,12 @@ export class EditableText extends AbstractPureComponent<IEditableTextProps, IEdi
         input: (input: HTMLInputElement | HTMLTextAreaElement) => {
             if (input != null) {
                 input.focus();
-                const { length } = input.value;
-                input.setSelectionRange(this.props.selectAllOnFocus ? 0 : length, length);
-                if (!this.props.selectAllOnFocus) {
+                const supportsSelection = inputSupportsSelection(input);
+                if (supportsSelection) {
+                    const { length } = input.value;
+                    input.setSelectionRange(this.props.selectAllOnFocus ? 0 : length, length);
+                }
+                if (!supportsSelection || !this.props.selectAllOnFocus) {
                     input.scrollLeft = input.scrollWidth;
                 }
             }
@@ -280,7 +300,7 @@ export class EditableText extends AbstractPureComponent<IEditableTextProps, IEdi
     };
 
     private maybeRenderInput(value: string) {
-        const { maxLength, multiline, placeholder } = this.props;
+        const { maxLength, multiline, type, placeholder } = this.props;
         if (!this.state.isEditing) {
             return undefined;
         }
@@ -301,7 +321,7 @@ export class EditableText extends AbstractPureComponent<IEditableTextProps, IEdi
         return multiline ? (
             <textarea ref={this.refHandlers.input} {...props} />
         ) : (
-            <input ref={this.refHandlers.input} type="text" {...props} />
+            <input ref={this.refHandlers.input} type={type} {...props} />
         );
     }
 
@@ -374,5 +394,23 @@ function insertAtCaret(el: HTMLTextAreaElement, text: string) {
         el.value = `${before}${text}${after}`;
         el.selectionStart = selectionStart + len;
         el.selectionEnd = selectionStart + len;
+    }
+}
+
+function inputSupportsSelection(input: HTMLInputElement | HTMLTextAreaElement) {
+    switch (input.type) {
+        // HTMLTextAreaElement
+        case "textarea":
+            return true;
+        // HTMLInputElement
+        // see https://html.spec.whatwg.org/multipage/input.html#do-not-apply
+        case "text":
+        case "search":
+        case "tel":
+        case "url":
+        case "password":
+            return true;
+        default:
+            return false;
     }
 }
