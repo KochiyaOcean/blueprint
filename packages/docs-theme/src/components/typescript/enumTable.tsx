@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-import { IProps } from "@blueprintjs/core";
 import { ITsEnum, ITsEnumMember } from "@documentalist/client";
 import classNames from "classnames";
 import * as React from "react";
+
+import { Props } from "@blueprintjs/core";
+
 import { DocumentationContextTypes, IDocumentationContext } from "../../common/context";
 import { ModifierTable } from "../modifierTable";
 import { ApiHeader } from "./apiHeader";
@@ -25,12 +27,13 @@ import { DeprecatedTag } from "./deprecatedTag";
 
 export type Renderer<T> = (props: T) => React.ReactNode;
 
-export interface IEnumTableProps extends IProps {
+export interface IEnumTableProps extends Props {
     data: ITsEnum;
 }
 
 export class EnumTable extends React.PureComponent<IEnumTableProps> {
     public static contextTypes = DocumentationContextTypes;
+
     public static displayName = "Docs2.EnumTable";
 
     public context: IDocumentationContext;
@@ -50,6 +53,8 @@ export class EnumTable extends React.PureComponent<IEnumTableProps> {
     }
 
     private renderPropRow = (entry: ITsEnumMember) => {
+        // this is inside RUNNING_TEXT
+        /* eslint-disable @blueprintjs/html-components */
         const { renderBlock } = this.context;
         const {
             flags: { isDeprecated, isExternal },
@@ -61,8 +66,6 @@ export class EnumTable extends React.PureComponent<IEnumTableProps> {
             "docs-prop-is-internal": !isExternal,
         });
 
-        // this is inside RUNNING_TEXT
-        /* eslint-disable @blueprintjs/blueprint/html-components */
         return (
             <tr key={name}>
                 <td className={classes}>
@@ -77,7 +80,6 @@ export class EnumTable extends React.PureComponent<IEnumTableProps> {
                 </td>
             </tr>
         );
-        /* eslint-enable @blueprintjs/blueprint/html-components */
     };
 
     private renderTags(entry: ITsEnumMember) {

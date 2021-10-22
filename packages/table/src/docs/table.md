@@ -1,6 +1,6 @@
 @# Table
 
-A highly interactive React `Table` component.
+A highly interactive table component.
 
 <div class="@ns-callout @ns-large @ns-intent-primary @ns-icon-info-sign">
 
@@ -14,6 +14,11 @@ Do not forget to include `table.css` on your page.
 ```sh
 npm install --save @blueprintjs/table
 ```
+
+<div class="@ns-callout @ns-large @ns-intent-success @ns-icon-star">
+
+There is a new version of the table component compatible with the new hotkeys API, see [Table2](#table/table2).
+</div>
 
 ### Features
 
@@ -47,20 +52,26 @@ The table is **data-agnostic**. It doesn't store any data internally, so it is u
 You can specify how the data is displayed by defining the `cellRenderer` prop on each `Column` component.
 This is useful when working with typed columnar data, like database results.
 
-For example, this creates a table that renders dollar values:
+For example, this creates a table that renders dollar and euro values:
 
 ```tsx
 import { Cell, Column, Table } from "@blueprintjs/table";
 
-const cellRenderer = (rowIndex: number) => {
-    return <Cell>{`$${(rowIndex * 10).toFixed(2)}`}</Cell>
-};
+const dollarCellRenderer = (rowIndex: number) => (
+    <Cell>{`$${(rowIndex * 10).toFixed(2)}`}</Cell>
+);
+const euroCellRenderer = (rowIndex: number) => (
+    <Cell>{`€${(rowIndex * 10 * 0.85).toFixed(2)}`}</Cell>
+);
+
 <Table numRows={10}>
-    <Column name="Dollars" cellRenderer={cellRenderer}/>
+    <Column name="Dollars" cellRenderer={dollarCellRenderer}/>
+    <Column name="Euros" cellRenderer={euroCellRenderer} />
 </Table>
 ```
 
 @reactExample TableDollarExample
 
+@page table2
 @page features
 @page api

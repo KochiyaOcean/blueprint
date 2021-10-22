@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-import { DISPLAYNAME_PREFIX, IProps } from "@blueprintjs/core";
 import * as React from "react";
-import { emptyCellRenderer, ICellRenderer } from "./cell/cell";
-import { IColumnHeaderRenderer } from "./headers/columnHeader";
+
+import { DISPLAYNAME_PREFIX, Props } from "@blueprintjs/core";
+
+import { emptyCellRenderer, CellRenderer } from "./cell/cell";
+import { ColumnHeaderRenderer } from "./headers/columnHeader";
 import { IColumnNameProps } from "./headers/columnHeaderCell";
 import { ColumnLoadingOption } from "./regions";
 
-export interface IColumnProps extends IColumnNameProps, IProps {
+export type ColumnProps = IColumnProps;
+export interface IColumnProps extends IColumnNameProps, Props {
     /**
      * A unique ID, similar to React's `key`. This is used, for example, to
      * maintain the width of a column between re-ordering and rendering. If no
@@ -42,16 +45,16 @@ export interface IColumnProps extends IColumnNameProps, IProps {
     loadingOptions?: ColumnLoadingOption[];
 
     /**
-     * An instance of `ICellRenderer`, a function that takes a row and column
+     * An instance of `CellRenderer`, a function that takes a row and column
      * index, and returns a `Cell` React element.
      */
-    cellRenderer?: ICellRenderer;
+    cellRenderer?: CellRenderer;
 
     /**
-     * An instance of `IColumnHeaderRenderer`, a function that takes a column
+     * An instance of `ColumnHeaderRenderer`, a function that takes a column
      * index and returns a `ColumnHeaderCell` React element.
      */
-    columnHeaderCellRenderer?: IColumnHeaderRenderer;
+    columnHeaderCellRenderer?: ColumnHeaderRenderer;
 }
 
 export class Column extends React.PureComponent<IColumnProps> {

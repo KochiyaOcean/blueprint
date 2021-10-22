@@ -20,8 +20,9 @@ import * as React from "react";
 import { spy } from "sinon";
 
 import { dispatchMouseEvent } from "@blueprintjs/test-commons";
+
+import { Classes, OverlayProps, Overlay, Portal, Utils } from "../../src";
 import * as Keys from "../../src/common/keys";
-import { Classes, IOverlayProps, Overlay, Portal, Utils } from "../../src/index";
 import { findInPortal } from "../utils";
 
 const BACKDROP_SELECTOR = `.${Classes.OVERLAY_BACKDROP}`;
@@ -35,7 +36,8 @@ The `wrapper` variable below and the `mountWrapper` method should be used for fu
 For shallow mounts, be sure to call `shallowWrapper.unmount()` after the assertions.
 */
 describe("<Overlay>", () => {
-    let wrapper: ReactWrapper<IOverlayProps, any>;
+    let wrapper: ReactWrapper<OverlayProps, any>;
+    let isMounted = false;
     const testsContainerElement = document.createElement("div");
     document.documentElement.appendChild(testsContainerElement);
 
@@ -45,16 +47,21 @@ describe("<Overlay>", () => {
      */
     function mountWrapper(content: JSX.Element) {
         wrapper = mount(content, { attachTo: testsContainerElement });
+        isMounted = true;
         return wrapper;
     }
 
     afterEach(() => {
-        // clean up wrapper after each test, if it was used
-        if (wrapper != null) {
-            wrapper.unmount();
-            wrapper.detach();
-            wrapper = null;
+        if (isMounted) {
+            // clean up wrapper after each test, if it was used
+            wrapper?.unmount();
+            wrapper?.detach();
+            isMounted = false;
         }
+    });
+
+    after(() => {
+        document.documentElement.removeChild(testsContainerElement);
     });
 
     it("renders its content correctly", () => {
@@ -79,6 +86,16 @@ describe("<Overlay>", () => {
         );
         assert.lengthOf(container.getElementsByClassName(CLASS_TO_TEST), 1);
         document.body.removeChild(container);
+    });
+
+    it("sets aria-live", () => {
+        // Using an open Overlay because an initially closed Overlay will not render anything to the
+        // DOM
+        mountWrapper(<Overlay className="aria-test" isOpen={true} usePortal={false} />);
+        const overlayElement = document.querySelector(".aria-test");
+        assert.exists(overlayElement);
+        // Element#ariaLive not supported in Firefox or IE
+        assert.equal(overlayElement?.getAttribute("aria-live"), "polite");
     });
 
     it("portalClassName appears on Portal", () => {
@@ -237,82 +254,110 @@ describe("<Overlay>", () => {
     });
 
     describe("Focus management", () => {
+        const overlayClassName = "test-overlay";
+
         it("brings focus to overlay if autoFocus=true", done => {
             mountWrapper(
-                <Overlay autoFocus={true} isOpen={true} usePortal={true}>
+                <Overlay className={overlayClassName} autoFocus={true} isOpen={true} usePortal={true}>
                     <input type="text" />
                 </Overlay>,
             );
-            assertFocus(() => {
-                const backdrops = Array.from(document.querySelectorAll("." + Classes.OVERLAY_BACKDROP));
-                assert.include(backdrops, document.activeElement);
-            }, done);
+            assertFocusIsInOverlayWithTimeout(done);
         });
 
-        it("does not bring focus to overlay if autoFocus=false", done => {
+        it("does not bring focus to overlay if autoFocus=false and enforceFocus=false", done => {
             mountWrapper(
                 <div>
                     <button>something outside overlay for browser to focus on</button>
-                    <Overlay autoFocus={false} isOpen={true} usePortal={true}>
+                    <Overlay
+                        className={overlayClassName}
+                        autoFocus={false}
+                        enforceFocus={false}
+                        isOpen={true}
+                        usePortal={true}
+                    >
                         <input type="text" />
                     </Overlay>
                 </div>,
             );
-            assertFocus("body", done);
+            assertFocusWithTimeout("body", done);
         });
 
         // React implements autoFocus itself so our `[autofocus]` logic never fires.
         // Still, worth testing we can control where the focus goes.
         it("autoFocus element inside overlay gets the focus", done => {
             mountWrapper(
-                <Overlay isOpen={true} usePortal={true}>
+                <Overlay className={overlayClassName} isOpen={true} usePortal={true}>
                     <input autoFocus={true} type="text" />
                 </Overlay>,
             );
-            assertFocus("input", done);
+            assertFocusWithTimeout("input", done);
         });
 
         it("returns focus to overlay if enforceFocus=true", done => {
-            let buttonRef: HTMLElement;
-            let inputRef: HTMLElement;
+            let buttonRef: HTMLElement | null = null;
+            let inputRef: HTMLElement | null = null;
             mountWrapper(
                 <div>
                     <button ref={ref => (buttonRef = ref)} />
-                    <Overlay enforceFocus={true} isOpen={true} usePortal={true}>
+                    <Overlay className={overlayClassName} enforceFocus={true} isOpen={true} usePortal={true}>
                         <input autoFocus={true} ref={ref => (inputRef = ref)} />
                     </Overlay>
                 </div>,
             );
             assert.strictEqual(document.activeElement, inputRef);
-            buttonRef.focus();
-            assertFocus(() => {
-                assert.notStrictEqual(document.activeElement, buttonRef);
-                assert.isTrue(document.activeElement.classList.contains(Classes.OVERLAY_BACKDROP), "focus on backdrop");
-            }, done);
+            buttonRef!.focus();
+            assertFocusIsInOverlayWithTimeout(done);
         });
 
         it("returns focus to overlay after clicking the backdrop if enforceFocus=true", done => {
             mountWrapper(
-                <Overlay enforceFocus={true} canOutsideClickClose={false} isOpen={true} usePortal={false}>
+                <Overlay
+                    className={overlayClassName}
+                    enforceFocus={true}
+                    canOutsideClickClose={false}
+                    isOpen={true}
+                    usePortal={false}
+                >
                     {createOverlayContents()}
                 </Overlay>,
             );
             wrapper.find(BACKDROP_SELECTOR).simulate("mousedown");
-            assertFocus(`strong.${Classes.OVERLAY_CONTENT}`, done);
+            assertFocusIsInOverlayWithTimeout(done);
+        });
+
+        it("returns focus to overlay after clicking an outside element if enforceFocus=true", done => {
+            mountWrapper(
+                <div>
+                    <Overlay
+                        enforceFocus={true}
+                        canOutsideClickClose={false}
+                        className={overlayClassName}
+                        isOpen={true}
+                        usePortal={false}
+                        hasBackdrop={false}
+                    >
+                        {createOverlayContents()}
+                    </Overlay>
+                    <button id="buttonId" />
+                </div>,
+            );
+            wrapper.find("#buttonId").simulate("click");
+            assertFocusIsInOverlayWithTimeout(done);
         });
 
         it("does not result in maximum call stack if two overlays open with enforceFocus=true", () => {
             const anotherContainer = document.createElement("div");
             document.documentElement.appendChild(anotherContainer);
             const temporaryWrapper = mount(
-                <Overlay enforceFocus={true} isOpen={true} usePortal={false}>
+                <Overlay className={overlayClassName} enforceFocus={true} isOpen={true} usePortal={false}>
                     <input type="text" />
                 </Overlay>,
                 { attachTo: anotherContainer },
             );
 
             mountWrapper(
-                <Overlay enforceFocus={true} isOpen={false} usePortal={false}>
+                <Overlay className={overlayClassName} enforceFocus={true} isOpen={false} usePortal={false}>
                     <input id="inputId" type="text" />
                 </Overlay>,
             );
@@ -330,9 +375,9 @@ describe("<Overlay>", () => {
         });
 
         it("does not return focus to overlay if enforceFocus=false", done => {
-            let buttonRef: HTMLElement;
+            let buttonRef: HTMLElement | null;
             const focusBtnAndAssert = () => {
-                buttonRef.focus();
+                buttonRef?.focus();
                 assert.strictEqual(buttonRef, document.activeElement);
                 done();
             };
@@ -340,7 +385,7 @@ describe("<Overlay>", () => {
             mountWrapper(
                 <div>
                     <button ref={ref => (buttonRef = ref)} />
-                    <Overlay enforceFocus={false} isOpen={true} usePortal={true}>
+                    <Overlay className={overlayClassName} enforceFocus={false} isOpen={true} usePortal={true}>
                         <input ref={ref => ref && setTimeout(focusBtnAndAssert)} />
                     </Overlay>
                 </div>,
@@ -348,29 +393,35 @@ describe("<Overlay>", () => {
         });
 
         it("doesn't focus overlay if focus is already inside overlay", done => {
-            let textarea: HTMLTextAreaElement;
+            let textarea: HTMLTextAreaElement | null;
             mountWrapper(
-                <Overlay isOpen={true} usePortal={true}>
+                <Overlay className={overlayClassName} isOpen={true} usePortal={true}>
                     <textarea ref={ref => (textarea = ref)} />
                 </Overlay>,
             );
-            textarea.focus();
-            assertFocus("textarea", done);
+            textarea!.focus();
+            assertFocusWithTimeout("textarea", done);
         });
 
         it("does not focus overlay when closed", done => {
             mountWrapper(
                 <div>
                     <button ref={ref => ref && ref.focus()} />
-                    <Overlay isOpen={false} usePortal={true} />
+                    <Overlay className={overlayClassName} isOpen={false} usePortal={true} />
                 </div>,
             );
-            assertFocus("button", done);
+            assertFocusWithTimeout("button", done);
         });
 
         it("does not crash while trying to return focus to overlay if user clicks outside the document", () => {
             mountWrapper(
-                <Overlay enforceFocus={true} canOutsideClickClose={false} isOpen={true} usePortal={false}>
+                <Overlay
+                    className={overlayClassName}
+                    enforceFocus={true}
+                    canOutsideClickClose={false}
+                    isOpen={true}
+                    usePortal={false}
+                >
                     {createOverlayContents()}
                 </Overlay>,
             );
@@ -388,7 +439,7 @@ describe("<Overlay>", () => {
             }
         });
 
-        function assertFocus(selector: string | (() => void), done: MochaDone) {
+        function assertFocusWithTimeout(selector: string | (() => void), done: Mocha.Done) {
             // the behavior being tested relies on requestAnimationFrame.
             // setTimeout for a few frames later to let things settle (to reduce flakes).
             setTimeout(() => {
@@ -400,6 +451,13 @@ describe("<Overlay>", () => {
                 }
                 done();
             }, 40);
+        }
+
+        function assertFocusIsInOverlayWithTimeout(done: Mocha.Done) {
+            assertFocusWithTimeout(() => {
+                const overlayElement = document.querySelector(`.${overlayClassName}`);
+                assert.isTrue(overlayElement?.contains(document.activeElement));
+            }, done);
         }
     });
 
@@ -459,7 +517,7 @@ describe("<Overlay>", () => {
             );
         }
 
-        function assertBodyScrollingDisabled(disabled: boolean, done: MochaDone) {
+        function assertBodyScrollingDisabled(disabled: boolean, done: Mocha.Done) {
             // wait for the DOM to settle before checking body classes
             setTimeout(() => {
                 const hasClass = document.body.classList.contains(Classes.OVERLAY_OPEN);
@@ -508,6 +566,10 @@ describe("<Overlay>", () => {
 
     let index = 0;
     function createOverlayContents() {
-        return <strong id={`overlay-${index++}`}>Overlay content!</strong>;
+        return (
+            <strong id={`overlay-${index++}`} tabIndex={0}>
+                Overlay content!
+            </strong>
+        );
     }
 });

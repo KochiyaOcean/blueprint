@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-import { IProps, Utils as CoreUtils } from "@blueprintjs/core";
 import classNames from "classnames";
 import * as React from "react";
 
+import { Props, Utils as CoreUtils } from "@blueprintjs/core";
+
 import * as Classes from "../common/classes";
 
-export interface IGuideLayerProps extends IProps {
+export interface IGuideLayerProps extends Props {
     /**
      *  The left-offset location of the vertical guides
      */
@@ -32,7 +33,7 @@ export interface IGuideLayerProps extends IProps {
     horizontalGuides?: number[];
 }
 
-export class GuideLayer extends React.Component<IGuideLayerProps, {}> {
+export class GuideLayer extends React.Component<IGuideLayerProps> {
     public shouldComponentUpdate(nextProps: IGuideLayerProps) {
         if (this.props.className !== nextProps.className) {
             return true;

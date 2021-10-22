@@ -16,6 +16,7 @@
 
 import { expect } from "chai";
 import { Data, Placement, Position } from "popper.js";
+
 import { arrowOffsetModifier, getAlignment, getOppositePosition } from "../../src/components/popover/popperUtils";
 
 describe("Popper utils", () => {
@@ -52,7 +53,7 @@ describe("Popper utils", () => {
 
         function getPopperData(placement: Placement) {
             // minimal data fields necessary for modifier implementation
-            // tslint:disable-next-line:no-object-literal-type-assertion
+            // eslint-disable-line @typescript-eslint/consistent-type-assertions
             return {
                 arrowElement: { clientWidth: 20 },
                 offsets: {

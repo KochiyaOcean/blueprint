@@ -19,6 +19,8 @@ import * as React from "react";
 import { Button, Classes, H1, Intent, Popover, Position, Switch, Tooltip } from "@blueprintjs/core";
 import { Example, IExampleProps } from "@blueprintjs/docs-theme";
 
+/* eslint-disable deprecation/deprecation */
+
 export class TooltipExample extends React.PureComponent<IExampleProps, { isOpen: boolean }> {
     public state = {
         isOpen: false,
@@ -53,6 +55,16 @@ export class TooltipExample extends React.PureComponent<IExampleProps, { isOpen:
                     This line's tooltip{" "}
                     <Tooltip className={Classes.TOOLTIP_INDICATOR} content={<span>disabled</span>} disabled={true}>
                         is disabled.
+                    </Tooltip>
+                </div>
+                <div>
+                    This line's tooltip{" "}
+                    <Tooltip
+                        className={Classes.TOOLTIP_INDICATOR}
+                        content={<span>This tooltip has the minimal style applied!</span>}
+                        minimal={true}
+                    >
+                        is minimal.
                     </Tooltip>
                 </div>
                 <div>
@@ -117,6 +129,7 @@ export class TooltipExample extends React.PureComponent<IExampleProps, { isOpen:
                 >
                     <Tooltip
                         content={<span>This button also has a popover!</span>}
+                        openOnTargetFocus={false}
                         position={Position.RIGHT}
                         usePortal={false}
                     >

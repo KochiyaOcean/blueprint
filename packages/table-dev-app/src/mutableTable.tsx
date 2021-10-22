@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+/* eslint-disable react/jsx-no-bind */
+
+import classNames from "classnames";
+import * as React from "react";
+
 import {
     Button,
     Classes,
@@ -21,38 +26,35 @@ import {
     H4,
     H6,
     HTMLSelect,
-    IButtonProps,
+    ButtonProps,
     Intent,
     Menu,
     MenuDivider,
     MenuItem,
     Switch,
 } from "@blueprintjs/core";
-import classNames from "classnames";
-import * as React from "react";
-
 import {
     Cell,
     Column,
     ColumnHeaderCell,
-    EditableCell,
+    EditableCell2,
     EditableName,
-    IStyledRegionGroup,
+    StyledRegionGroup,
     JSONFormat,
+    Region,
     RegionCardinality,
     Regions,
     RowHeaderCell,
-    Table,
+    Table2,
     TableLoadingOption,
     TruncatedFormat,
     TruncatedPopoverMode,
     Utils,
-} from "@blueprintjs/table/src";
-
+} from "@blueprintjs/table";
 import { IFocusedCellCoordinates } from "@blueprintjs/table/src/common/cell";
 import { IColumnIndices, IRowIndices } from "@blueprintjs/table/src/common/grid";
 import { RenderMode } from "@blueprintjs/table/src/common/renderMode";
-import { IRegion } from "@blueprintjs/table/src/regions";
+
 import { DenseGridMutableStore } from "./denseGridMutableStore";
 import { LocalStore } from "./localStore";
 import { SlowLayoutStack } from "./slowLayoutStack";
@@ -113,6 +115,8 @@ const TRUNCATED_POPOVER_MODES: TruncatedPopoverMode[] = [
     TruncatedPopoverMode.WHEN_TRUNCATED_APPROX,
 ];
 
+const FOCUS_STYLES: FocusStyle[] = [FocusStyle.TAB, FocusStyle.TAB_OR_CLICK];
+
 const TRUNCATION_LENGTHS: number[] = [20, 80, 100, 1000];
 const TRUNCATION_LENGTH_DEFAULT_INDEX = 1;
 
@@ -131,14 +135,13 @@ const LONG_TEXT_WORD_SPLIT_REGEXP = /.{1,5}/g;
 const LARGE_JSON_PROP_COUNT = 3;
 const LARGE_JSON_OBJECT_DEPTH = 2;
 
-const CELL_CONTENT_GENERATORS: { [name: string]: (ri: number, ci: number) => string | object } = {
+const CELL_CONTENT_GENERATORS: { [name: string]: (ri: number, ci: number) => string | Record<string, unknown> } = {
+    /* eslint-disable-next-line @typescript-eslint/unbound-method */
     [CellContent.CELL_NAMES]: Utils.toBase26CellName,
     [CellContent.EMPTY]: () => "",
     [CellContent.LONG_TEXT]: () => {
         const randomLength = getRandomInteger(LONG_TEXT_MIN_LENGTH, LONG_TEXT_MAX_LENGTH);
-        return getRandomString(randomLength)
-            .match(LONG_TEXT_WORD_SPLIT_REGEXP)
-            .join(" ");
+        return getRandomString(randomLength).match(LONG_TEXT_WORD_SPLIT_REGEXP).join(" ");
     },
     [CellContent.LARGE_JSON]: () => {
         return getRandomObject(LARGE_JSON_PROP_COUNT, LARGE_JSON_OBJECT_DEPTH);
@@ -162,7 +165,7 @@ function handleNumberChange(handler: (value: number) => void) {
     return handleStringChange(value => handler(+value));
 }
 
-function getRandomObject(propCount: number, depth = 0): object {
+function getRandomObject(propCount: number, depth = 0): Record<string, unknown> {
     const childPropCount = propCount;
     const obj: any = {};
     for (let i = 0; i < propCount; i++) {
@@ -194,9 +197,7 @@ function getRandomInteger(min: number, max: number): number {
 function getRandomString(length: number): string {
     let str = "";
     while (str.length < length) {
-        str += Math.random()
-            .toString(36)
-            .substr(2);
+        str += Math.random().toString(36).substr(2);
     }
     return str.substr(0, length);
 }
@@ -205,12 +206,12 @@ function contains(arr: any[], value: any) {
     return arr.indexOf(value) >= 0;
 }
 
-function enforceWholeColumnSelection(region: IRegion) {
+function enforceWholeColumnSelection(region: Region) {
     delete region.rows;
     return region;
 }
 
-function enforceWholeRowSelection(region: IRegion) {
+function enforceWholeRowSelection(region: Region) {
     delete region.cols;
     return region;
 }
@@ -247,7 +248,7 @@ export interface IMutableTableState {
     scrollToRowIndex?: number;
     selectedFocusStyle?: FocusStyle;
     selectedRegionTransformPreset?: SelectedRegionTransformPreset;
-    selectedRegions?: IRegion[];
+    selectedRegions?: Region[];
     showCallbackLogs?: boolean;
     showCellsLoading?: boolean;
     showColumnHeadersLoading?: boolean;
@@ -309,14 +310,16 @@ const DEFAULT_STATE: IMutableTableState = {
     showZebraStriping: false,
 };
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export class MutableTable extends React.Component<{}, IMutableTableState> {
     private store = new DenseGridMutableStore<any>();
 
-    private tableInstance: Table;
+    private tableInstance: Table2;
+
     private stateStore: LocalStore<IMutableTableState>;
 
     private refHandlers = {
-        table: (ref: Table) => (this.tableInstance = ref),
+        table: (ref: Table2) => (this.tableInstance = ref),
     };
 
     public constructor(props: any, context?: any) {
@@ -355,6 +358,7 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
         this.syncFocusStyle();
     }
 
+    // eslint-disable-next-line @typescript-eslint/ban-types
     public componentWillUpdate(_nextProps: {}, nextState: IMutableTableState) {
         if (
             nextState.cellContent !== this.state.cellContent ||
@@ -375,9 +379,7 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
     // ==========
 
     private generateColumnKey = () => {
-        return Math.random()
-            .toString(36)
-            .substring(7);
+        return Math.random().toString(36).substring(7);
     };
 
     // Renderers
@@ -385,7 +387,7 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
 
     private renderTable() {
         return (
-            <Table
+            <Table2
                 bodyContextMenuRenderer={this.renderBodyContextMenu}
                 enableColumnInteractionBar={this.state.showTableInteractionBar}
                 enableColumnReordering={this.state.enableColumnReordering}
@@ -419,7 +421,7 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
                 styledRegionGroups={this.getStyledRegionGroups()}
             >
                 {this.renderColumns()}
-            </Table>
+            </Table2>
         );
     }
 
@@ -553,11 +555,13 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
         const valueAsString = value == null ? "" : value;
 
         const isEvenRow = rowIndex % 2 === 0;
-        const classes = classNames({ "tbl-zebra-stripe": this.state.showZebraStriping && isEvenRow });
+        const classes = classNames({
+            "tbl-zebra-stripe": this.state.showZebraStriping && isEvenRow,
+        });
 
         if (this.state.enableCellEditing) {
             return (
-                <EditableCell
+                <EditableCell2
                     className={classes}
                     columnIndex={columnIndex}
                     loading={this.state.showCellsLoading}
@@ -612,29 +616,29 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
             "Render mode",
             "renderMode",
             RENDER_MODES,
-            this.toRenderModeLabel,
-            this.handleNumberStateChange,
+            toRenderModeLabel,
+            this.handleStringStateChange,
         );
         const selectedRegionTransformPresetMenu = this.renderSelectMenu(
             "Selection",
             "selectedRegionTransformPreset",
             SELECTION_MODES,
-            this.toSelectedRegionTransformPresetLabel,
-            this.handleSelectedRegionTransformPresetChange,
+            toSelectedRegionTransformPresetLabel,
+            this.handleStringStateChange,
         );
         const cellContentMenu = this.renderSelectMenu(
             "Cell content",
             "cellContent",
             CELL_CONTENTS,
-            this.toCellContentLabel,
-            this.handleNumberStateChange,
+            toCellContentLabel,
+            this.handleStringStateChange,
         );
         const truncatedPopoverModeMenu = this.renderSelectMenu(
             "Popover",
             "cellTruncatedPopoverMode",
             TRUNCATED_POPOVER_MODES,
-            this.toTruncatedPopoverModeLabel,
-            this.handleNumberStateChange,
+            toTruncatedPopoverModeLabel,
+            this.handleStringStateChange,
             "enableCellTruncation",
             true,
         );
@@ -642,10 +646,18 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
             "Length",
             "cellTruncationLength",
             TRUNCATION_LENGTHS,
-            this.toValueLabel,
+            toValueLabel,
             this.handleNumberStateChange,
             "enableCellTruncationFixed",
             true,
+        );
+
+        const renderFocusStyleSelectMenu = this.renderSelectMenu(
+            "Focus outlines",
+            "selectedFocusStyle",
+            FOCUS_STYLES,
+            toFocusStyleLabel,
+            this.handleStringStateChange,
         );
 
         return (
@@ -715,18 +727,21 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
 
                 <H4>Page</H4>
                 <H6>Display</H6>
-                {this.renderFocusStyleSelectMenu()}
+                {renderFocusStyleSelectMenu}
                 <H6>Perf</H6>
                 {this.renderSwitch("Slow layout", "enableSlowLayout")}
                 {this.renderSwitch("Isolate layout boundary", "enableLayoutBoundary")}
 
                 <H4>Settings</H4>
-                {this.renderButton("Reset all", { icon: "undo", onClick: this.handleDefaultsButtonClick })}
+                {this.renderButton("Reset all", {
+                    icon: "undo",
+                    onClick: this.handleDefaultsButtonClick,
+                })}
             </div>
         );
     }
 
-    private renderButton(label: string, props: IButtonProps) {
+    private renderButton(label: string, props: ButtonProps) {
         return <Button fill={true} intent={Intent.PRIMARY} text={label} {...props} />;
     }
 
@@ -737,8 +752,8 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
             "Region type",
             "scrollToRegionType",
             REGION_CARDINALITIES,
-            this.getRegionCardinalityLabel,
-            this.handleRegionCardinalityChange,
+            getRegionCardinalityLabel,
+            this.handleStringStateChange,
         );
         const scrollToRowSelectMenu = this.renderSelectMenu(
             "Row",
@@ -773,21 +788,6 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
         );
     }
 
-    private getRegionCardinalityLabel(cardinality: RegionCardinality) {
-        switch (cardinality) {
-            case RegionCardinality.CELLS:
-                return "Cell";
-            case RegionCardinality.FULL_ROWS:
-                return "Row";
-            case RegionCardinality.FULL_COLUMNS:
-                return "Column";
-            case RegionCardinality.FULL_TABLE:
-                return "Full table";
-            default:
-                return "";
-        }
-    }
-
     private renderSwitch(
         label: string,
         stateKey: keyof IMutableTableState,
@@ -813,21 +813,8 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
         }
     }
 
-    private renderFocusStyleSelectMenu() {
-        const { selectedFocusStyle } = this.state;
-        return (
-            <label className={classNames(Classes.LABEL, Classes.INLINE, "tbl-select-label")}>
-                Focus outlines
-                <HTMLSelect onChange={this.updateFocusStyleState()} value={selectedFocusStyle}>
-                    <option value="tab">On tab</option>
-                    <option value="tabOrClick">On tab or click</option>
-                </HTMLSelect>
-            </label>
-        );
-    }
-
     private renderNumberSelectMenu(label: string, stateKey: keyof IMutableTableState, values: number[]) {
-        return this.renderSelectMenu(label, stateKey, values, this.toValueLabel, this.handleNumberStateChange);
+        return this.renderSelectMenu(label, stateKey, values, toValueLabel, this.handleNumberStateChange);
     }
 
     private renderSelectMenu<T>(
@@ -887,67 +874,6 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
         return <div title={`Requires ${prereqStateKey}=${prereqStateKeyValue}`}>{element}</div>;
     }
 
-    // Select menu - label generators
-    // ==============================
-
-    private toRenderModeLabel(renderMode: RenderMode) {
-        switch (renderMode) {
-            case RenderMode.BATCH:
-                return "Batch";
-            case RenderMode.BATCH_ON_UPDATE:
-                return "Batch on update";
-            default:
-                return "None";
-        }
-    }
-
-    private toSelectedRegionTransformPresetLabel(selectedRegionTransformPreset: SelectedRegionTransformPreset) {
-        switch (selectedRegionTransformPreset) {
-            case SelectedRegionTransformPreset.CELL:
-                return "Unconstrained";
-            case SelectedRegionTransformPreset.ROW:
-                return "Whole rows only";
-            case SelectedRegionTransformPreset.COLUMN:
-                return "Whole columns only";
-            default:
-                return "None";
-        }
-    }
-
-    private toCellContentLabel(cellContent: CellContent) {
-        switch (cellContent) {
-            case CellContent.CELL_NAMES:
-                return "Cell names";
-            case CellContent.EMPTY:
-                return "Empty";
-            case CellContent.LONG_TEXT:
-                return "Long text";
-            case CellContent.LARGE_JSON:
-                return "Large JSON (~5KB)";
-            default:
-                return "";
-        }
-    }
-
-    private toTruncatedPopoverModeLabel(truncatedPopoverMode: TruncatedPopoverMode) {
-        switch (truncatedPopoverMode) {
-            case TruncatedPopoverMode.ALWAYS:
-                return "Always";
-            case TruncatedPopoverMode.NEVER:
-                return "Never";
-            case TruncatedPopoverMode.WHEN_TRUNCATED:
-                return "When truncated";
-            case TruncatedPopoverMode.WHEN_TRUNCATED_APPROX:
-                return "Truncated approx";
-            default:
-                return "";
-        }
-    }
-
-    private toValueLabel(value: any) {
-        return value.toString();
-    }
-
     // Callbacks
     // =========
 
@@ -955,7 +881,7 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
         this.maybeLogCallback("[onCompleteRender]");
     };
 
-    private onSelection = (selectedRegions: IRegion[]) => {
+    private onSelection = (selectedRegions: Region[]) => {
         this.maybeLogCallback(`[onSelection] selectedRegions =`, ...selectedRegions);
         this.setState({ selectedRegions });
     };
@@ -1000,7 +926,7 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
     private maybeLogCallback = (message?: any, ...optionalParams: any[]) => {
         if (this.state.showCallbackLogs) {
             // allow console.log for these callbacks so devs can see exactly when they fire
-            // tslint:disable-next-line no-console
+            // eslint-disable-next-line no-console
             console.log(message, ...optionalParams);
         }
     };
@@ -1020,7 +946,7 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
     private handleScrollToButtonClick = () => {
         const { scrollToRowIndex, scrollToColumnIndex, scrollToRegionType } = this.state;
 
-        let region: IRegion;
+        let region: Region;
         switch (scrollToRegionType) {
             case RegionCardinality.CELLS:
                 region = Regions.cell(scrollToRowIndex, scrollToColumnIndex);
@@ -1099,19 +1025,8 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
         return handleNumberChange(value => this.setState({ [stateKey]: value }));
     };
 
-    private handleRegionCardinalityChange = (stateKey: keyof IMutableTableState) => {
-        return handleNumberChange(value => this.setState({ [stateKey]: value }));
-    };
-
-    private handleSelectedRegionTransformPresetChange = (stateKey: keyof IMutableTableState) => {
+    private handleStringStateChange = (stateKey: keyof IMutableTableState) => {
         return handleStringChange(value => this.setState({ [stateKey]: value }));
-    };
-
-    private updateFocusStyleState = () => {
-        return handleStringChange((value: string) => {
-            const selectedFocusStyle = value === "tab" ? FocusStyle.TAB : FocusStyle.TAB_OR_CLICK;
-            this.setState({ selectedFocusStyle });
-        });
     };
 
     private renderBodyContextMenu = () => {
@@ -1192,6 +1107,91 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
                       className: "tbl-styled-region-danger",
                       regions: [Regions.cell(5, 3, 7, 7)],
                   },
-              ] as IStyledRegionGroup[]);
+              ] as StyledRegionGroup[]);
     }
+}
+
+// Select menu - label generators
+// ==============================
+
+function toRenderModeLabel(renderMode: RenderMode) {
+    switch (renderMode) {
+        case RenderMode.BATCH:
+            return "Batch";
+        case RenderMode.BATCH_ON_UPDATE:
+            return "Batch on update";
+        default:
+            return "None";
+    }
+}
+
+function toSelectedRegionTransformPresetLabel(selectedRegionTransformPreset: SelectedRegionTransformPreset) {
+    switch (selectedRegionTransformPreset) {
+        case SelectedRegionTransformPreset.CELL:
+            return "Unconstrained";
+        case SelectedRegionTransformPreset.ROW:
+            return "Whole rows only";
+        case SelectedRegionTransformPreset.COLUMN:
+            return "Whole columns only";
+        default:
+            return "None";
+    }
+}
+
+function toCellContentLabel(cellContent: CellContent) {
+    switch (cellContent) {
+        case CellContent.CELL_NAMES:
+            return "Cell names";
+        case CellContent.EMPTY:
+            return "Empty";
+        case CellContent.LONG_TEXT:
+            return "Long text";
+        case CellContent.LARGE_JSON:
+            return "Large JSON (~5KB)";
+        default:
+            return "";
+    }
+}
+
+function toTruncatedPopoverModeLabel(truncatedPopoverMode: TruncatedPopoverMode) {
+    switch (truncatedPopoverMode) {
+        case TruncatedPopoverMode.ALWAYS:
+            return "Always";
+        case TruncatedPopoverMode.NEVER:
+            return "Never";
+        case TruncatedPopoverMode.WHEN_TRUNCATED:
+            return "When truncated";
+        case TruncatedPopoverMode.WHEN_TRUNCATED_APPROX:
+            return "Truncated approx";
+        default:
+            return "";
+    }
+}
+
+function toFocusStyleLabel(focusStyle: FocusStyle) {
+    switch (focusStyle) {
+        case FocusStyle.TAB:
+            return "On tab";
+        default:
+            return "On tab or click";
+    }
+}
+
+function getRegionCardinalityLabel(cardinality: RegionCardinality) {
+    switch (cardinality) {
+        case RegionCardinality.CELLS:
+            return "Cell";
+        case RegionCardinality.FULL_ROWS:
+            return "Row";
+        case RegionCardinality.FULL_COLUMNS:
+            return "Column";
+        case RegionCardinality.FULL_TABLE:
+            return "Full table";
+        default:
+            return "";
+    }
+}
+
+function toValueLabel(value: any) {
+    return value.toString();
 }

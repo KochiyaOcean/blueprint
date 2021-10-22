@@ -24,6 +24,7 @@ export class PopoverDismissExample extends React.PureComponent<
     { captureDismiss: boolean; isOpen: boolean }
 > {
     public state = { captureDismiss: true, isOpen: true };
+
     private timeoutId: number;
 
     public componentWillUnmount() {
@@ -31,9 +32,12 @@ export class PopoverDismissExample extends React.PureComponent<
     }
 
     public render() {
+        /* eslint-disable deprecation/deprecation */
         return (
             <Example options={false} {...this.props}>
                 <Popover
+                    autoFocus={false}
+                    enforceFocus={false}
                     isOpen={this.state.isOpen}
                     onInteraction={this.handleInteraction}
                     onClosed={this.reopen}
@@ -66,9 +70,11 @@ export class PopoverDismissExample extends React.PureComponent<
                 </p>
             </Example>
         );
+        /* eslint-enable deprecation/deprecation */
     }
 
     private handleInteraction = (isOpen: boolean) => this.setState({ isOpen });
+
     private handleDismissChange = (event: React.ChangeEvent<HTMLInputElement>) =>
         this.setState({ captureDismiss: event.target.checked });
 

@@ -19,7 +19,9 @@ import { mount, ReactWrapper } from "enzyme";
 import * as React from "react";
 import { spy } from "sinon";
 
-import { Classes, IPanel, IPanelProps, IPanelStackProps, PanelStack } from "../../src/index";
+import { Classes, IPanel, IPanelProps, IPanelStackProps, PanelStack } from "../../src";
+
+/* eslint-disable deprecation/deprecation */
 
 export class TestPanel extends React.Component<IPanelProps> {
     public render() {
@@ -55,11 +57,8 @@ describe("<PanelStack>", () => {
     });
 
     afterEach(() => {
-        if (panelStackWrapper !== undefined) {
-            panelStackWrapper.unmount();
-            panelStackWrapper.detach();
-            panelStackWrapper = undefined;
-        }
+        panelStackWrapper?.unmount();
+        panelStackWrapper?.detach();
         testsContainerElement.remove();
     });
 
@@ -148,7 +147,7 @@ describe("<PanelStack>", () => {
 
         const transitionGroupClassName = panelStackWrapper.findClass(TEST_CLASS_NAME).props().className;
         assert.exists(transitionGroupClassName);
-        assert.equal(transitionGroupClassName.indexOf(Classes.PANEL_STACK), 0);
+        assert.equal(transitionGroupClassName!.indexOf(Classes.PANEL_STACK), 0);
     });
 
     it("can render a panel without a title", () => {
@@ -160,20 +159,22 @@ describe("<PanelStack>", () => {
         newPanelButton.simulate("click");
 
         const backButtonWithoutTitle = panelStackWrapper.findClass(Classes.PANEL_STACK_HEADER_BACK);
-        assert.equal(backButtonWithoutTitle.text(), "chevron-left");
+        assert.equal(
+            backButtonWithoutTitle.prop("aria-label"),
+            "Back",
+            "expected icon-only back button to have accessible label",
+        );
 
-        const newPanelButtonOnNotEmpty = panelStackWrapper
-            .find("#new-panel-button")
-            .hostNodes()
-            .at(1);
+        const newPanelButtonOnNotEmpty = panelStackWrapper.find("#new-panel-button").hostNodes().at(1);
         assert.exists(newPanelButtonOnNotEmpty);
         newPanelButtonOnNotEmpty.simulate("click");
 
-        const backButtonWithTitle = panelStackWrapper
-            .findClass(Classes.PANEL_STACK_HEADER_BACK)
-            .hostNodes()
-            .at(1);
-        assert.equal(backButtonWithTitle.text(), "chevron-left");
+        const backButtonWithTitle = panelStackWrapper.findClass(Classes.PANEL_STACK_HEADER_BACK).hostNodes().at(1);
+        assert.equal(
+            backButtonWithTitle.prop("aria-label"),
+            "Back",
+            "expected icon-only back button to have accessible label",
+        );
     });
 
     it("can render a panel stack in controlled mode", () => {
@@ -193,7 +194,10 @@ describe("<PanelStack>", () => {
 
     it("can open a panel in controlled mode", () => {
         let stack = [initialPanel];
-        panelStackWrapper = renderPanelStack({ onOpen: panel => (stack = [...stack, panel]), stack });
+        panelStackWrapper = renderPanelStack({
+            onOpen: panel => (stack = [...stack, panel]),
+            stack,
+        });
         assert.exists(panelStackWrapper);
 
         const newPanelButton = panelStackWrapper.find("#new-panel-button");
@@ -266,7 +270,9 @@ describe("<PanelStack>", () => {
     }
 
     function renderPanelStack(props: IPanelStackProps): IPanelStackWrapper {
-        panelStackWrapper = mount(<PanelStack {...props} />, { attachTo: testsContainerElement }) as IPanelStackWrapper;
+        panelStackWrapper = mount(<PanelStack {...props} />, {
+            attachTo: testsContainerElement,
+        }) as IPanelStackWrapper;
         panelStackWrapper.findClass = (className: string) => panelStackWrapper.find(`.${className}`).hostNodes();
         return panelStackWrapper;
     }

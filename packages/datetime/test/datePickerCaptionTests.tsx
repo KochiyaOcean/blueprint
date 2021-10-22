@@ -20,9 +20,9 @@ import * as React from "react";
 import * as sinon from "sinon";
 
 import { HTMLSelect } from "@blueprintjs/core";
-import { ClassNames } from "react-day-picker";
+
+import { Classes, IDatePickerLocaleUtils } from "../src";
 import { DatePickerCaption, IDatePickerCaptionProps } from "../src/datePickerCaption";
-import { Classes, IDatePickerLocaleUtils } from "../src/index";
 
 describe("<DatePickerCaption>", () => {
     const LOCALE_UTILS: IDatePickerLocaleUtils = {
@@ -117,8 +117,7 @@ describe("<DatePickerCaption>", () => {
     function renderDatePickerCaption(props?: Partial<IDatePickerCaptionProps>) {
         const wrapper = mount(
             <DatePickerCaption
-                // tslint:disable-next-line:no-object-literal-type-assertion
-                classNames={{} as ClassNames}
+                classNames={{} as any}
                 date={new Date(2015, 0)}
                 locale="en"
                 localeUtils={LOCALE_UTILS}
@@ -130,15 +129,9 @@ describe("<DatePickerCaption>", () => {
         );
 
         return {
-            month: wrapper
-                .find(HTMLSelect)
-                .filter({ className: Classes.DATEPICKER_MONTH_SELECT })
-                .find("select"),
+            month: wrapper.find(HTMLSelect).filter({ className: Classes.DATEPICKER_MONTH_SELECT }).find("select"),
             root: wrapper,
-            year: wrapper
-                .find(HTMLSelect)
-                .filter({ className: Classes.DATEPICKER_YEAR_SELECT })
-                .find("select"),
+            year: wrapper.find(HTMLSelect).filter({ className: Classes.DATEPICKER_YEAR_SELECT }).find("select"),
         };
     }
 });

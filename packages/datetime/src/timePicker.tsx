@@ -14,18 +14,10 @@
  * limitations under the License.
  */
 
-import {
-    Classes as CoreClasses,
-    DISPLAYNAME_PREFIX,
-    HTMLSelect,
-    Icon,
-    Intent,
-    IProps,
-    Keys,
-    Utils as BlueprintUtils,
-} from "@blueprintjs/core";
 import classNames from "classnames";
 import * as React from "react";
+
+import { Classes as CoreClasses, DISPLAYNAME_PREFIX, HTMLSelect, Icon, Intent, Props, Keys } from "@blueprintjs/core";
 
 import * as Classes from "./common/classes";
 import * as DateUtils from "./common/dateUtils";
@@ -46,9 +38,20 @@ export const TimePrecision = {
     MINUTE: "minute" as "minute",
     SECOND: "second" as "second",
 };
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type TimePrecision = typeof TimePrecision[keyof typeof TimePrecision];
 
-export interface ITimePickerProps extends IProps {
+// eslint-disable-next-line deprecation/deprecation
+export type TimePickerProps = ITimePickerProps;
+/** @deprecated use TimePickerProps */
+export interface ITimePickerProps extends Props {
+    /**
+     * Whether to focus the first input when it opens initially.
+     *
+     * @default false
+     */
+    autoFocus?: boolean;
+
     /**
      * Initial time the `TimePicker` will display.
      * This should not be set if `value` is set.
@@ -57,9 +60,15 @@ export interface ITimePickerProps extends IProps {
 
     /**
      * Whether the time picker is non-interactive.
+     *
      * @default false
      */
     disabled?: boolean;
+
+    /**
+     * Callback invoked on blur event emitted by specific time unit input
+     */
+    onBlur?: (event: React.FocusEvent<HTMLInputElement>, unit: TimeUnit) => void;
 
     /**
      * Callback invoked when the user changes the time.
@@ -67,25 +76,44 @@ export interface ITimePickerProps extends IProps {
     onChange?: (newTime: Date) => void;
 
     /**
+     * Callback invoked on focus event emitted by specific time unit input
+     */
+    onFocus?: (event: React.FocusEvent<HTMLInputElement>, unit: TimeUnit) => void;
+
+    /**
+     * Callback invoked on keydown event emitted by specific time unit input
+     */
+    onKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>, unit: TimeUnit) => void;
+
+    /**
+     * Callback invoked on keyup event emitted by specific time unit input
+     */
+    onKeyUp?: (event: React.KeyboardEvent<HTMLInputElement>, unit: TimeUnit) => void;
+
+    /**
      * The precision of time the user can set.
+     *
      * @default TimePrecision.MINUTE
      */
     precision?: TimePrecision;
 
     /**
      * Whether all the text in each input should be selected on focus.
+     *
      * @default false
      */
     selectAllOnFocus?: boolean;
 
     /**
      * Whether to show arrows buttons for changing the time.
+     *
      * @default false
      */
     showArrowButtons?: boolean;
 
     /**
      * Whether to use a 12 hour format with an AM/PM dropdown.
+     *
      * @default false
      */
     useAmPm?: boolean;
@@ -112,7 +140,7 @@ export interface ITimePickerProps extends IProps {
      * The currently set time.
      * If this prop is provided, the component acts in a controlled manner.
      */
-    value?: Date;
+    value?: Date | null;
 }
 
 export interface ITimePickerState {
@@ -124,8 +152,9 @@ export interface ITimePickerState {
     isPm?: boolean;
 }
 
-export class TimePicker extends React.Component<ITimePickerProps, ITimePickerState> {
-    public static defaultProps: ITimePickerProps = {
+export class TimePicker extends React.Component<TimePickerProps, ITimePickerState> {
+    public static defaultProps: TimePickerProps = {
+        autoFocus: false,
         disabled: false,
         maxTime: getDefaultMaxTime(),
         minTime: getDefaultMinTime(),
@@ -137,17 +166,10 @@ export class TimePicker extends React.Component<ITimePickerProps, ITimePickerSta
 
     public static displayName = `${DISPLAYNAME_PREFIX}.TimePicker`;
 
-    public constructor(props?: ITimePickerProps, context?: any) {
+    public constructor(props?: TimePickerProps, context?: any) {
         super(props, context);
 
-        let value = props.minTime;
-        if (props.value != null) {
-            value = props.value;
-        } else if (props.defaultValue != null) {
-            value = props.defaultValue;
-        }
-
-        this.state = this.getFullStateFromValue(value, props.useAmPm);
+        this.state = this.getFullStateFromValue(this.getInitialValue(), props.useAmPm);
     }
 
     public render() {
@@ -158,7 +180,6 @@ export class TimePicker extends React.Component<ITimePickerProps, ITimePickerSta
             [CoreClasses.DISABLED]: this.props.disabled,
         });
 
-        /* tslint:disable:max-line-length */
         return (
             <div className={classes}>
                 <div className={Classes.TIMEPICKER_ARROW_ROW}>
@@ -187,17 +208,19 @@ export class TimePicker extends React.Component<ITimePickerProps, ITimePickerSta
                 </div>
             </div>
         );
-        /* tslint:enable:max-line-length */
     }
 
-    public componentDidUpdate(prevProps: ITimePickerProps) {
+    public componentDidUpdate(prevProps: TimePickerProps) {
         const didMinTimeChange = prevProps.minTime !== this.props.minTime;
         const didMaxTimeChange = prevProps.maxTime !== this.props.maxTime;
         const didBoundsChange = didMinTimeChange || didMaxTimeChange;
         const didPropValueChange = prevProps.value !== this.props.value;
-        const shouldStateUpdate = didMinTimeChange || didMaxTimeChange || didBoundsChange || didPropValueChange;
+        const shouldStateUpdate = didBoundsChange || didPropValueChange;
 
         let value = this.state.value;
+        if (this.props.value == null) {
+            value = this.getInitialValue();
+        }
         if (didBoundsChange) {
             value = DateUtils.getTimeInRange(this.state.value, this.props.minTime, this.props.maxTime);
         }
@@ -218,9 +241,13 @@ export class TimePicker extends React.Component<ITimePickerProps, ITimePickerSta
         }
         const classes = classNames(Classes.TIMEPICKER_ARROW_BUTTON, getTimeUnitClassName(timeUnit));
         const onClick = () => (isDirectionUp ? this.incrementTime : this.decrementTime)(timeUnit);
+        // set tabIndex=-1 to ensure a valid FocusEvent relatedTarget when focused
         return (
-            <span className={classes} onClick={onClick}>
-                <Icon icon={isDirectionUp ? "chevron-up" : "chevron-down"} />
+            <span tabIndex={-1} className={classes} onClick={onClick}>
+                <Icon
+                    icon={isDirectionUp ? "chevron-up" : "chevron-down"}
+                    title={isDirectionUp ? "Increase" : "Decrease"}
+                />
             </span>
         );
     }
@@ -231,6 +258,7 @@ export class TimePicker extends React.Component<ITimePickerProps, ITimePickerSta
 
     private renderInput(className: string, unit: TimeUnit, value: string) {
         const isValid = isTimeUnitValid(unit, parseInt(value, 10));
+        const isHour = unit === TimeUnit.HOUR_12 || unit === TimeUnit.HOUR_24;
 
         return (
             <input
@@ -241,10 +269,12 @@ export class TimePicker extends React.Component<ITimePickerProps, ITimePickerSta
                 )}
                 onBlur={this.getInputBlurHandler(unit)}
                 onChange={this.getInputChangeHandler(unit)}
-                onFocus={this.handleFocus}
+                onFocus={this.getInputFocusHandler(unit)}
                 onKeyDown={this.getInputKeyDownHandler(unit)}
+                onKeyUp={this.getInputKeyUpHandler(unit)}
                 value={value}
                 disabled={this.props.disabled}
+                autoFocus={isHour && this.props.autoFocus}
             />
         );
     }
@@ -287,9 +317,17 @@ export class TimePicker extends React.Component<ITimePickerProps, ITimePickerSta
         }
     };
 
-    private getInputBlurHandler = (unit: TimeUnit) => (e: React.SyntheticEvent<HTMLInputElement>) => {
+    private getInputBlurHandler = (unit: TimeUnit) => (e: React.FocusEvent<HTMLInputElement>) => {
         const text = getStringValueFromInputEvent(e);
         this.updateTime(parseInt(text, 10), unit);
+        this.props.onBlur?.(e, unit);
+    };
+
+    private getInputFocusHandler = (unit: TimeUnit) => (e: React.FocusEvent<HTMLInputElement>) => {
+        if (this.props.selectAllOnFocus) {
+            e.currentTarget.select();
+        }
+        this.props.onFocus?.(e, unit);
     };
 
     private getInputKeyDownHandler = (unit: TimeUnit) => (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -300,12 +338,11 @@ export class TimePicker extends React.Component<ITimePickerProps, ITimePickerSta
                 (e.currentTarget as HTMLInputElement).blur();
             },
         });
+        this.props.onKeyDown?.(e, unit);
     };
 
-    private handleFocus = (e: React.SyntheticEvent<HTMLInputElement>) => {
-        if (this.props.selectAllOnFocus) {
-            e.currentTarget.select();
-        }
+    private getInputKeyUpHandler = (unit: TimeUnit) => (e: React.KeyboardEvent<HTMLInputElement>) => {
+        this.props.onKeyUp?.(e, unit);
     };
 
     private handleAmPmChange = (e: React.SyntheticEvent<HTMLSelectElement>) => {
@@ -337,7 +374,9 @@ export class TimePicker extends React.Component<ITimePickerProps, ITimePickerSta
     }
 
     private incrementTime = (unit: TimeUnit) => this.shiftTime(unit, 1);
+
     private decrementTime = (unit: TimeUnit) => this.shiftTime(unit, -1);
+
     private shiftTime(unit: TimeUnit, amount: number) {
         if (this.props.disabled) {
             return;
@@ -385,8 +424,19 @@ export class TimePicker extends React.Component<ITimePickerProps, ITimePickerSta
         }
 
         if (hasNewValue) {
-            BlueprintUtils.safeInvoke(this.props.onChange, newState.value);
+            this.props.onChange?.(newState.value);
         }
+    }
+
+    private getInitialValue(): Date {
+        let value = this.props.minTime;
+        if (this.props.value != null) {
+            value = this.props.value;
+        } else if (this.props.defaultValue != null) {
+            value = this.props.defaultValue;
+        }
+
+        return value;
     }
 }
 
@@ -417,6 +467,8 @@ interface IKeyEventMap {
 function handleKeyEvent(e: React.KeyboardEvent<HTMLInputElement>, actions: IKeyEventMap, preventDefault = true) {
     for (const k of Object.keys(actions)) {
         const key = Number(k);
+        // HACKHACK: https://github.com/palantir/blueprint/issues/4165
+        // eslint-disable-next-line deprecation/deprecation
         if (e.which === key) {
             if (preventDefault) {
                 e.preventDefault();

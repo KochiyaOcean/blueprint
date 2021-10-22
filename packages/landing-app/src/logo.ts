@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-// tslint:disable:max-classes-per-file no-conditional-assignment
+/* eslint-disable max-classes-per-file, no-cond-assign */
 
 const LOGO_Y_OFFSET = 250;
 const SHADOW_DEPTH = 0.3;
 const EXPLOSION_DELAY = 150;
 
-/*-----------------------------------------------
+/* -----------------------------------------------
 
     GEOMETRIC PRIMITIVES
 
@@ -30,6 +30,7 @@ export type IMatrixTuple = number[];
 
 export class Matrix {
     private static POOL: IMatrixTuple = new Array<number>(16);
+
     private static IDENTITY: IMatrixTuple = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 
     private saved: IMatrixTuple;
@@ -110,7 +111,7 @@ export class Matrix {
 
 const M = (m?: IMatrixTuple) => new Matrix(m);
 
-// tslint:disable-next-line:no-shadowed-variable - complains about <T>, unsure why
+// eslint-disable-line no-shadow
 export abstract class Transformable<T extends Transformable<any>> {
     public abstract transform(matrix: Matrix): T;
 
@@ -155,6 +156,7 @@ export class Quaternion {
     }
 
     private static PIXELS_PER_RADIAN = 2000;
+
     private static POOL = new Quaternion();
 
     public constructor(public x = 0, public y = 0, public z = 0, public w = 0) {}
@@ -177,7 +179,7 @@ export class Quaternion {
     }
 
     public toMatrix() {
-        // tslint:disable-next-line:no-this-assignment
+        // eslint-disable-line @typescript-eslint/no-this-alias
         const { w, x, y, z } = this;
         return M([
             1 - 2 * (y * y + z * z),
@@ -277,7 +279,7 @@ export class Point extends Transformable<Point> {
 
 export const P = (x?: number, y?: number, z?: number) => new Point(x, y, z);
 
-/*-----------------------------------------------
+/* -----------------------------------------------
 
     3D MODELS
 
@@ -312,14 +314,23 @@ export class Face extends Transformable<Face> {
     }
 
     public fill: string;
+
     public stroke: string;
+
     public overlays: ICompositeOverlays;
+
     public projected: Point[];
+
     public projectedCenter: Point;
+
     public dropShadowOf: Face;
+
     public bounds: IBounds;
+
     public lineDash: number[];
+
     public lineDashOffset: number;
+
     public order: number;
 
     public constructor(public points: Point[]) {
@@ -435,6 +446,7 @@ export class Corner extends Transformable<Corner> {
     }
 
     public projected: ISegment[];
+
     public projectedCenter: Point;
 
     public constructor(public segments: ISegment[], public center: Point) {
@@ -464,6 +476,7 @@ export class SceneModel extends Transformable<SceneModel> {
     })();
 
     public children: Array<Transformable<any>> = [];
+
     public xform = M();
 
     public constructor() {
@@ -508,7 +521,7 @@ export class SceneModel extends Transformable<SceneModel> {
     }
 }
 
-/*-----------------------------------------------
+/* -----------------------------------------------
 
     ANIMATION
 
@@ -566,6 +579,7 @@ export type IRenderCallback = () => void;
 
 export class Accumulator implements ITickable {
     public alpha = 0.08; // convergence ratio
+
     public value: number;
 
     public constructor(public target: number, public callback?: IAnimatedCallback) {
@@ -638,7 +652,9 @@ export class Ticker implements ITickable {
 
 export class Animator {
     private tickables: ITickable[] = [];
+
     private startTime: number = 0;
+
     private frameId: number | undefined;
 
     public constructor(private render: IRenderCallback) {}
@@ -688,7 +704,7 @@ export class Animator {
     }
 }
 
-/*-----------------------------------------------
+/* -----------------------------------------------
 
     CANVAS RENDERERS
 
@@ -726,11 +742,7 @@ export class CanvasBuffer {
         if (bounds == null) {
             bounds = [0, 0, this.ctx.canvas.width, this.ctx.canvas.height];
         }
-        const args = []
-            .concat([this.ctx.canvas])
-            .concat(bounds)
-            .concat(bounds);
-        ctx.drawImage.apply(ctx, args);
+        ctx.drawImage(this.ctx.canvas, ...bounds, ...bounds);
     }
 }
 
@@ -751,7 +763,9 @@ export abstract class CanvasRenderer {
     public abstract render: () => void;
 
     public retinaScale: number;
+
     protected width: number;
+
     protected height: number;
 
     public constructor(protected ctx: CanvasRenderingContext2D) {
@@ -878,12 +892,7 @@ export class SceneRenderer extends CanvasRenderer {
             if (object instanceof Shape) {
                 const shape = object;
                 for (const face of shape.faces) {
-                    face.projected = face.points.map(point =>
-                        point
-                            .copy()
-                            .transform(transform)
-                            .round(),
-                    );
+                    face.projected = face.points.map(point => point.copy().transform(transform).round());
 
                     face.projectedCenter = P();
                     for (const p of face.projected) {
@@ -1169,27 +1178,15 @@ export function initializeLogo(canvas: HTMLCanvasElement, canvasBackground: HTML
             .multiply(Quaternion.xyAlt(accumX.value, -accumY.value).toMatrix())
             .multiply(M().translate(-1, -1, -1));
 
-        explodeGroups[0]
-            .restore()
-            .translate(accumExploder[0].value, 0, 0)
-            .transform(rotate);
-        explodeGroups[1]
-            .restore()
-            .translate(0, 0, accumExploder[1].value)
-            .transform(rotate);
+        explodeGroups[0].restore().translate(accumExploder[0].value, 0, 0).transform(rotate);
+        explodeGroups[1].restore().translate(0, 0, accumExploder[1].value).transform(rotate);
         explodeGroups[2]
             .restore()
             .translate(accumExploder[2].value, -2 * accumExploder[2].value, -accumExploder[2].value)
             .transform(rotate);
 
-        shadowGroups[0]
-            .restore()
-            .translate(accumExploder[0].value, SHADOW_DEPTH, 0)
-            .transform(rotate);
-        shadowGroups[1]
-            .restore()
-            .translate(0, SHADOW_DEPTH, accumExploder[1].value)
-            .transform(rotate);
+        shadowGroups[0].restore().translate(accumExploder[0].value, SHADOW_DEPTH, 0).transform(rotate);
+        shadowGroups[1].restore().translate(0, SHADOW_DEPTH, accumExploder[1].value).transform(rotate);
         shadowGroups[2]
             .restore()
             .translate(accumExploder[2].value, SHADOW_DEPTH, -accumExploder[2].value)

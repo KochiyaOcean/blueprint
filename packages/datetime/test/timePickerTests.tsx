@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { Classes as CoreClasses, Intent, Keys } from "@blueprintjs/core";
 import { assert } from "chai";
 import { mount } from "enzyme";
 import * as React from "react";
@@ -22,7 +21,9 @@ import * as ReactDOM from "react-dom";
 import * as TestUtils from "react-dom/test-utils";
 import * as sinon from "sinon";
 
-import { Classes, ITimePickerProps, TimePicker, TimePrecision } from "../src/index";
+import { Classes as CoreClasses, Intent, Keys } from "@blueprintjs/core";
+
+import { Classes, ITimePickerProps, TimePicker, TimePrecision } from "../src";
 import { assertTimeIs, createTimeObject } from "./common/dateTestUtils";
 
 describe("<TimePicker>", () => {
@@ -188,7 +189,11 @@ describe("<TimePicker>", () => {
     });
 
     it("value doesn't change when disabled", () => {
-        renderTimePicker({ disabled: true, precision: TimePrecision.MILLISECOND, showArrowButtons: true });
+        renderTimePicker({
+            disabled: true,
+            precision: TimePrecision.MILLISECOND,
+            showArrowButtons: true,
+        });
 
         const hourInput = findInputElement(Classes.TIMEPICKER_HOUR);
         assert.isTrue(hourInput.disabled);
@@ -607,6 +612,32 @@ describe("<TimePicker>", () => {
             assert.strictEqual(value.getMinutes(), 2);
             assert.strictEqual(value.getSeconds(), 3);
             assert.strictEqual(value.getMilliseconds(), 4);
+        });
+
+        it("changing value to null resets state", () => {
+            const root = mount<TimePicker>(<TimePicker defaultValue={new Date(2015, 1, 1, 1, 2, 3, 4)} />);
+
+            const initialValue = root.state("value");
+            assert.strictEqual(initialValue.getHours(), 1);
+            assert.strictEqual(initialValue.getMinutes(), 2);
+            assert.strictEqual(initialValue.getSeconds(), 3);
+            assert.strictEqual(initialValue.getMilliseconds(), 4);
+
+            root.setProps({ value: new Date(2015, 1, 1, 5, 6, 7, 8) });
+
+            const updatedValue = root.state("value");
+            assert.strictEqual(updatedValue.getHours(), 5);
+            assert.strictEqual(updatedValue.getMinutes(), 6);
+            assert.strictEqual(updatedValue.getSeconds(), 7);
+            assert.strictEqual(updatedValue.getMilliseconds(), 8);
+
+            root.setProps({ value: null });
+
+            const resetValue = root.state("value");
+            assert.strictEqual(resetValue.getHours(), 1);
+            assert.strictEqual(resetValue.getMinutes(), 2);
+            assert.strictEqual(resetValue.getSeconds(), 3);
+            assert.strictEqual(resetValue.getMilliseconds(), 4);
         });
 
         it("should fire onChange events on up-arrow key down", () => {

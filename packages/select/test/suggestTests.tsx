@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-import { InputGroup, IPopoverProps, Keys, MenuItem, Popover } from "@blueprintjs/core";
 import { assert } from "chai";
 import { mount, ReactWrapper } from "enzyme";
 import * as React from "react";
 import * as sinon from "sinon";
 
-import { IFilm, renderFilm, TOP_100_FILMS } from "../../docs-app/src/examples/select-examples/films";
+import { InputGroup, IPopoverProps, Keys, MenuItem, Popover } from "@blueprintjs/core";
+
+import { IFilm, renderFilm, TOP_100_FILMS } from "../../docs-app/src/common/films";
+import { IItemRendererProps, QueryList } from "../src";
 import { ISuggestProps, ISuggestState, Suggest } from "../src/components/select/suggest";
-import { IItemRendererProps, QueryList } from "../src/index";
 import { selectComponentSuite } from "./selectComponentSuite";
 
 describe("Suggest", () => {
@@ -61,6 +62,7 @@ describe("Suggest", () => {
     describe("Basic behavior", () => {
         it("renders an input that triggers a popover containing items", () => {
             const wrapper = suggest();
+            /* eslint-disable-next-line deprecation/deprecation */
             const popover = wrapper.find(Popover);
             assert.lengthOf(wrapper.find(InputGroup), 1, "should render InputGroup");
             assert.lengthOf(popover, 1, "should render Popover");
@@ -101,7 +103,10 @@ describe("Suggest", () => {
 
         it("sets active item to the selected item when the popover is closed", done => {
             // transition duration shorter than timeout below to ensure it's done
-            const wrapper = suggest({ selectedItem: TOP_100_FILMS[10], popoverProps: { transitionDuration: 5 } });
+            const wrapper = suggest({
+                popoverProps: { transitionDuration: 5 },
+                selectedItem: TOP_100_FILMS[10],
+            });
             const queryList = ((wrapper.instance() as Suggest<IFilm>) as any).queryList as QueryList<IFilm>; // private ref
 
             assert.deepEqual(
@@ -236,6 +241,7 @@ describe("Suggest", () => {
             const modifiers = {}; // our own instance
             const wrapper = suggest({ popoverProps: getPopoverProps(false, modifiers) });
             wrapper.setProps({ popoverProps: getPopoverProps(true, modifiers) }).update();
+            /* eslint-disable-next-line deprecation/deprecation */
             assert.strictEqual(wrapper.find(Popover).prop("modifiers"), modifiers);
             assert.isTrue(onOpening.calledOnce);
         });
@@ -334,10 +340,7 @@ function filterByYear(query: string, film: IFilm) {
 }
 
 function selectItem(wrapper: ReactWrapper<any, any>, index: number) {
-    wrapper
-        .find("a")
-        .at(index)
-        .simulate("click");
+    wrapper.find("a").at(index).simulate("click");
 }
 
 function inputValueRenderer(item: IFilm) {

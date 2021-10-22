@@ -6,25 +6,31 @@ It is optimized for building complex data-dense interfaces for desktop applicati
 
 @reactDocs Welcome
 
-<div class="@ns-callout @ns-intent-success @ns-icon-endorsed">
-<h4 class="@ns-heading">
+<div class="@ns-callout @ns-intent-primary @ns-icon-endorsed">
+<h4 class="@ns-heading">Blueprint v3 releases new versions regularly.</h4>
 
-Blueprint v3 is available now! [See what's new.](#blueprint/whats-new-3.0)
+[See what's new in the change log &rarr;](https://github.com/palantir/blueprint/wiki/3.x-Changelog)
+</div>
 
-</h4>
+<div class="@ns-callout @ns-intent-success @ns-icon-star">
+<h4 class="@ns-heading">Blueprint v4.0 is coming soon!</h4>
+
+[Check out the feature overview and migration information on the wiki &rarr;](https://github.com/palantir/blueprint/wiki/Blueprint-4.0)
 </div>
 
 @## Quick start
 
 ### Install
 
-**@blueprintjs/core** is the primary Blueprint package on NPM and home to over 40 components. Install it with your package manager ([Yarn](https://yarnpkg.com/) is used in this example):
+**@blueprintjs/core** is the primary Blueprint package on NPM and home to over 40 components.
+Install it with your package manager ([Yarn](https://yarnpkg.com/) is used in this example):
 
 ```sh
 yarn add @blueprintjs/core react react-dom
 ```
 
-Additional components live in the **@blueprintjs/icons**, **@blueprintjs/datetime**, **@blueprintjs/select**, **@blueprintjs/table**, and **@blueprintjs/timezone** packages, separated by use case and significant dependencies. All have peer dependencies on **react** and **react-dom**, so these two packages must be installed alongside Blueprint.
+Additional components live in the **@blueprintjs/icons**, **@blueprintjs/datetime**, **@blueprintjs/select**, **@blueprintjs/table**, and **@blueprintjs/timezone** packages,
+separated by use case and significant dependencies. All have peer dependencies on **react** and **react-dom**, so these two packages must be installed alongside Blueprint.
 
 ### Import
 
@@ -51,5 +57,3 @@ The following example shows an `index.html` file; the same stylesheets should be
 @page getting-started
 @page reading-the-docs
 @page principles
-@page whats-new-2.0
-@page whats-new-3.0

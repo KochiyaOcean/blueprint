@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-import { IMenuItemProps, MenuItem, Utils } from "@blueprintjs/core";
 import * as React from "react";
+
+import { MenuItemProps, MenuItem } from "@blueprintjs/core";
 
 import { Clipboard } from "../../common/clipboard";
 import { Regions } from "../../regions";
 import { IMenuContext } from "./menuContext";
 
-export interface ICopyCellsMenuItemProps extends IMenuItemProps {
+export interface ICopyCellsMenuItemProps extends MenuItemProps {
     /**
      * The `IMenuContext` that launched the menu.
      */
@@ -46,7 +47,7 @@ export interface ICopyCellsMenuItemProps extends IMenuItemProps {
     onCopy?: (success: boolean) => void;
 }
 
-export class CopyCellsMenuItem extends React.PureComponent<ICopyCellsMenuItemProps, {}> {
+export class CopyCellsMenuItem extends React.PureComponent<ICopyCellsMenuItemProps> {
     public render() {
         const { context, getCellData, onCopy, ...menuItemProps } = this.props;
         return <MenuItem {...menuItemProps} onClick={this.handleClick} />;
@@ -57,6 +58,6 @@ export class CopyCellsMenuItem extends React.PureComponent<ICopyCellsMenuItemPro
         const cells = context.getUniqueCells();
         const sparse = Regions.sparseMapCells(cells, getCellData);
         const success = Clipboard.copyCells(sparse);
-        Utils.safeInvoke(onCopy, success);
+        onCopy?.(success);
     };
 }

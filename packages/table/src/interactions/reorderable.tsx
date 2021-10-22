@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-import { Utils as CoreUtils } from "@blueprintjs/core";
 import * as React from "react";
-import { IFocusedCellCoordinates } from "../common/cell";
+
+import { Utils as CoreUtils } from "@blueprintjs/core";
+
+import { FocusedCellCoordinates } from "../common/cell";
 import { Utils } from "../common/utils";
-import { IRegion, RegionCardinality, Regions } from "../regions";
-import { Draggable, ICoordinateData, IDraggableProps } from "./draggable";
+import { Region, RegionCardinality, Regions } from "../regions";
+import { Draggable, IDraggableProps } from "./draggable";
+import { ICoordinateData } from "./dragTypes";
 
 export interface IReorderableProps {
     /**
@@ -45,24 +48,26 @@ export interface IReorderableProps {
      * array of `Region`s. This array should be considered the new selection
      * state for the entire table.
      */
-    onSelection: (regions: IRegion[]) => void;
+    onSelection: (regions: Region[]) => void;
 
     /**
      * When the user reorders something, this callback is called with the new
      * focus cell for the newly selected set of regions.
      */
-    onFocusedCell: (focusedCell: IFocusedCellCoordinates) => void;
+    onFocusedCell: (focusedCell: FocusedCellCoordinates) => void;
 
     /**
      * An array containing the table's selection Regions.
+     *
      * @default []
      */
-    selectedRegions?: IRegion[];
+    selectedRegions?: Region[];
 }
 
 export interface IDragReorderable extends IReorderableProps {
     /**
      * Whether the reordering behavior is disabled.
+     *
      * @default false
      */
     disabled?: boolean | ((event: MouseEvent) => boolean);
@@ -71,7 +76,7 @@ export interface IDragReorderable extends IReorderableProps {
      * A callback that determines a `Region` for the single `MouseEvent`. If
      * no valid region can be found, `null` may be returned.
      */
-    locateClick: (event: MouseEvent) => IRegion;
+    locateClick: (event: MouseEvent) => Region;
 
     /**
      * A callback that determines the index at which to show the preview guide.
@@ -84,15 +89,16 @@ export interface IDragReorderable extends IReorderableProps {
      * A callback that converts the provided index into a region. The returned
      * region will be used to update the current selection after drag-reordering.
      */
-    toRegion: (index1: number, index2?: number) => IRegion;
+    toRegion: (index1: number, index2?: number) => Region;
 }
 
-export class DragReorderable extends React.PureComponent<IDragReorderable, {}> {
+export class DragReorderable extends React.PureComponent<IDragReorderable> {
     public static defaultProps: Partial<IDragReorderable> = {
         selectedRegions: [],
     };
 
     private selectedRegionStartIndex: number;
+
     private selectedRegionLength: number;
 
     public render() {
@@ -188,11 +194,11 @@ export class DragReorderable extends React.PureComponent<IDragReorderable, {}> {
 
     private shouldIgnoreMouseDown(event: MouseEvent) {
         const { disabled } = this.props;
-        const isDisabled = CoreUtils.isFunction(disabled) ? CoreUtils.safeInvoke(disabled, event) : disabled;
+        const isDisabled = CoreUtils.isFunction(disabled) ? disabled?.(event) : disabled;
         return !Utils.isLeftClick(event) || isDisabled;
     }
 
-    private maybeSelectRegion(region: IRegion) {
+    private maybeSelectRegion(region: Region) {
         const nextSelectedRegions = [region];
 
         if (!CoreUtils.deepCompareKeys(nextSelectedRegions, this.props.selectedRegions)) {

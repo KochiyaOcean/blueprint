@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+/* eslint-disable max-classes-per-file */
+
 import { expect } from "chai";
-import { IKeyBlacklist, IKeyWhitelist } from "../../../src/common/utils";
+
+import { IKeyAllowlist, IKeyDenylist } from "../../../src/common/utils";
 import * as CompareUtils from "../../../src/common/utils/compareUtils";
 
 describe("CompareUtils", () => {
@@ -87,7 +90,7 @@ describe("CompareUtils", () => {
                 expectedResult: boolean,
                 a: any,
                 b: any,
-                keys: IKeyBlacklist<IKeys> | IKeyWhitelist<IKeys>,
+                keys: IKeyDenylist<IKeys> | IKeyAllowlist<IKeys>,
             ) {
                 it(getCompareTestDescription(a, b), () => {
                     expect(CompareUtils.shallowCompareKeys(a, b, keys)).to.equal(expectedResult);
@@ -95,7 +98,7 @@ describe("CompareUtils", () => {
             }
         });
 
-        describe("with `keys` defined as blacklist", () => {
+        describe("with `keys` defined as denylist", () => {
             describe("returns true if only the specified values are shallowly equal", () => {
                 runTest(true, { a: 1 }, { a: 1 }, bl(["b", "c", "d"]));
                 runTest(true, { a: 1, b: [1, 2, 3], c: "3" }, { b: [1, 2, 3], a: 1, c: "3" }, bl(["b"]));
@@ -125,7 +128,7 @@ describe("CompareUtils", () => {
                 expectedResult: boolean,
                 a: any,
                 b: any,
-                keys: IKeyBlacklist<IKeys> | IKeyWhitelist<IKeys>,
+                keys: IKeyDenylist<IKeys> | IKeyAllowlist<IKeys>,
             ) {
                 it(getCompareTestDescription(a, b), () => {
                     expect(CompareUtils.shallowCompareKeys(a, b, keys)).to.equal(expectedResult);
@@ -169,7 +172,6 @@ describe("CompareUtils", () => {
     });
 
     describe("deepCompareKeys", () => {
-        // tslint:disable:max-classes-per-file
         class DVD {
             public constructor() {
                 /* Empty */
@@ -181,7 +183,6 @@ describe("CompareUtils", () => {
                 /* Empty */
             }
         }
-        // tslint:enable:max-classes-per-file
 
         describe("with `keys` defined", () => {
             describe("returns true if only the specified values are deeply equal", () => {
@@ -323,15 +324,15 @@ interface IKeys {
 }
 
 /**
- * A compactly named function for converting a string array to a key blacklist.
+ * A compactly named function for converting a string array to a key denylist.
  */
-function bl(keys: string[]): IKeyBlacklist<IKeys> {
+function bl(keys: string[]): IKeyDenylist<IKeys> {
     return { exclude: keys as Array<keyof IKeys> };
 }
 
 /**
  * A compactly named function for converting a string array to a key whitelist.
  */
-function wl(keys: string[]): IKeyWhitelist<IKeys> {
+function wl(keys: string[]): IKeyAllowlist<IKeys> {
     return { include: keys as Array<keyof IKeys> };
 }

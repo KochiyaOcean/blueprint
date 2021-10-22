@@ -15,10 +15,10 @@
  */
 
 import { expect } from "chai";
+import { mount } from "enzyme";
 import * as React from "react";
 import * as sinon from "sinon";
 
-import { mount } from "enzyme";
 import * as Classes from "../src/common/classes";
 import { IResizableProps, IResizeableState, Resizable } from "../src/interactions/resizable";
 import { Orientation, ResizeHandle } from "../src/interactions/resizeHandle";
@@ -29,7 +29,7 @@ interface IResizableDivProps {
     style?: React.CSSProperties;
 }
 
-class ResizableDiv extends React.Component<IResizableDivProps, {}> {
+class ResizableDiv extends React.Component<IResizableDivProps> {
     public render() {
         const { style } = this.props;
         return (
@@ -126,11 +126,7 @@ describe("Resizable", () => {
         expect(target.element).to.exist;
 
         // drag resize handle to the right by 10 pixels
-        target
-            .mouse("mousemove")
-            .mouse("mousedown")
-            .mouse("mousemove", 10)
-            .mouse("mouseup", 10);
+        target.mouse("mousemove").mouse("mousedown").mouse("mousemove", 10).mouse("mouseup", 10);
 
         expect(onLayoutLock.called).to.be.true;
         expect(onLayoutLock.lastCall.args[0]).to.be.false;
@@ -145,12 +141,7 @@ describe("Resizable", () => {
         onSizeChanged.resetHistory();
 
         // double click the resize handle
-        target
-            .mouse("mousemove")
-            .mouse("mousedown")
-            .mouse("mouseup", 10)
-            .mouse("mousedown")
-            .mouse("mouseup", 10);
+        target.mouse("mousemove").mouse("mousedown").mouse("mouseup", 10).mouse("mousedown").mouse("mouseup", 10);
 
         expect(onLayoutLock.called).to.be.true;
         expect(onSizeChanged.called).to.be.false;

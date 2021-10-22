@@ -21,13 +21,12 @@ import ReactDayPicker from "react-day-picker";
 import * as sinon from "sinon";
 
 import { Button, Classes as CoreClasses, HTMLSelect, Menu, MenuItem } from "@blueprintjs/core";
-import { expectPropValidationError } from "@blueprintjs/test-commons";
 
+import { Classes, DatePicker, IDatePickerModifiers, IDatePickerProps, TimePicker, TimePrecision } from "../src";
 import * as DateUtils from "../src/common/dateUtils";
 import * as Errors from "../src/common/errors";
 import { Months } from "../src/common/months";
 import { IDatePickerState } from "../src/datePicker";
-import { Classes, DatePicker, IDatePickerModifiers, IDatePickerProps, TimePicker, TimePrecision } from "../src/index";
 import { IDatePickerShortcut, Shortcuts } from "../src/shortcuts";
 import { assertDatesEqual, assertDayDisabled, assertDayHidden } from "./common/dateTestUtils";
 
@@ -158,38 +157,28 @@ describe("<DatePicker>", () => {
             it("calls onMonthChange on button next click", () => {
                 const onMonthChange = sinon.spy();
                 const { root } = wrap(<DatePicker defaultValue={defaultValue} dayPickerProps={{ onMonthChange }} />);
-                root.find(".DayPicker-NavButton--next")
-                    .first()
-                    .simulate("click");
+                root.find(".DayPicker-NavButton--next").first().simulate("click");
                 assert.isTrue(onMonthChange.called);
             });
 
             it("calls onMonthChange on button prev click", () => {
                 const onMonthChange = sinon.spy();
                 const { root } = wrap(<DatePicker defaultValue={defaultValue} dayPickerProps={{ onMonthChange }} />);
-                root.find(".DayPicker-NavButton--prev")
-                    .first()
-                    .simulate("click");
+                root.find(".DayPicker-NavButton--prev").first().simulate("click");
                 assert.isTrue(onMonthChange.called);
             });
 
             it("calls onMonthChange on month select change", () => {
                 const onMonthChange = sinon.spy();
                 const { root } = wrap(<DatePicker defaultValue={defaultValue} dayPickerProps={{ onMonthChange }} />);
-                root.find({ className: Classes.DATEPICKER_MONTH_SELECT })
-                    .first()
-                    .find("select")
-                    .simulate("change");
+                root.find({ className: Classes.DATEPICKER_MONTH_SELECT }).first().find("select").simulate("change");
                 assert.isTrue(onMonthChange.called);
             });
 
             it("calls onMonthChange on year select change", () => {
                 const onMonthChange = sinon.spy();
                 const { root } = wrap(<DatePicker defaultValue={defaultValue} dayPickerProps={{ onMonthChange }} />);
-                root.find({ className: Classes.DATEPICKER_YEAR_SELECT })
-                    .first()
-                    .find("select")
-                    .simulate("change");
+                root.find({ className: Classes.DATEPICKER_YEAR_SELECT }).first().find("select").simulate("change");
                 assert.isTrue(onMonthChange.called);
             });
 
@@ -273,60 +262,56 @@ describe("<DatePicker>", () => {
     describe("minDate/maxDate bounds", () => {
         const MIN_DATE = new Date(2015, Months.JANUARY, 7);
         const MAX_DATE = new Date(2015, Months.JANUARY, 12);
-        it("maxDate must be later than minDate", () => {
-            expectPropValidationError(
-                DatePicker,
-                { maxDate: MIN_DATE, minDate: MAX_DATE },
-                Errors.DATEPICKER_MAX_DATE_INVALID,
-            );
-        });
 
-        it("an error is thrown if defaultValue is outside bounds", () => {
-            expectPropValidationError(
-                DatePicker,
-                {
-                    defaultValue: new Date(2015, Months.JANUARY, 5),
-                    maxDate: MAX_DATE,
-                    minDate: MIN_DATE,
-                },
-                Errors.DATEPICKER_DEFAULT_VALUE_INVALID,
-            );
-        });
+        describe("validation", () => {
+            let consoleError: sinon.SinonStub;
 
-        it("an error is thrown if value is outside bounds", () => {
-            expectPropValidationError(
-                DatePicker,
-                {
-                    maxDate: MAX_DATE,
-                    minDate: MIN_DATE,
-                    value: new Date(2015, Months.JANUARY, 20),
-                },
-                Errors.DATEPICKER_VALUE_INVALID,
-            );
-        });
+            before(() => (consoleError = sinon.stub(console, "error")));
+            afterEach(() => consoleError.resetHistory());
+            after(() => consoleError.restore());
 
-        it("an error is thrown if initialMonth is outside month bounds", () => {
-            expectPropValidationError(
-                DatePicker,
-                {
-                    initialMonth: new Date(2015, Months.FEBRUARY, 12),
-                    maxDate: MAX_DATE,
-                    minDate: MIN_DATE,
-                },
-                Errors.DATEPICKER_INITIAL_MONTH_INVALID,
-            );
-        });
+            it("maxDate must be later than minDate", () => {
+                mount(<DatePicker maxDate={MIN_DATE} minDate={MAX_DATE} />);
+                assert.isTrue(consoleError.calledWith(Errors.DATEPICKER_MAX_DATE_INVALID));
+            });
 
-        it("an error is not thrown if initialMonth is outside day bounds but inside month bounds", () => {
-            assert.doesNotThrow(() =>
-                wrap(
+            it("an error is logged if defaultValue is outside bounds", () => {
+                mount(
+                    <DatePicker
+                        defaultValue={new Date(2015, Months.JANUARY, 5)}
+                        maxDate={MAX_DATE}
+                        minDate={MIN_DATE}
+                    />,
+                );
+                assert.isTrue(consoleError.calledWith(Errors.DATEPICKER_DEFAULT_VALUE_INVALID));
+            });
+
+            it("an error is logged if value is outside bounds", () => {
+                mount(<DatePicker value={new Date(2015, Months.JANUARY, 20)} maxDate={MAX_DATE} minDate={MIN_DATE} />);
+                assert.isTrue(consoleError.calledWith(Errors.DATEPICKER_VALUE_INVALID));
+            });
+
+            it("an error is logged if initialMonth is outside month bounds", () => {
+                mount(
+                    <DatePicker
+                        initialMonth={new Date(2015, Months.FEBRUARY, 12)}
+                        maxDate={MAX_DATE}
+                        minDate={MIN_DATE}
+                    />,
+                );
+                assert.isTrue(consoleError.calledWith(Errors.DATEPICKER_INITIAL_MONTH_INVALID));
+            });
+
+            it("an error is not logged if initialMonth is outside day bounds but inside month bounds", () => {
+                mount(
                     <DatePicker
                         initialMonth={new Date(2015, Months.JANUARY, 12)}
                         minDate={MIN_DATE}
                         maxDate={MAX_DATE}
                     />,
-                ),
-            );
+                );
+                assert.isTrue(consoleError.notCalled);
+            });
         });
 
         it("only days outside bounds have disabled class", () => {
@@ -346,6 +331,32 @@ describe("<DatePicker>", () => {
             assert.isTrue(onChange.notCalled);
             getDay(8).simulate("click");
             assert.isTrue(onChange.calledOnce);
+        });
+
+        it("constrains time picker when minDate is selected", () => {
+            const picker = mount(
+                <DatePicker
+                    maxDate={MAX_DATE}
+                    minDate={MIN_DATE}
+                    timePrecision={TimePrecision.MINUTE}
+                    value={MIN_DATE}
+                />,
+            );
+            const timePicker = picker.find(TimePicker).first();
+            assert.strictEqual(timePicker.props().minTime, MIN_DATE);
+        });
+
+        it("constrains time picker when max date is selected", () => {
+            const picker = mount(
+                <DatePicker
+                    maxDate={MAX_DATE}
+                    minDate={MIN_DATE}
+                    timePrecision={TimePrecision.MINUTE}
+                    value={MAX_DATE}
+                />,
+            );
+            const timePicker = picker.find(TimePicker).first();
+            assert.strictEqual(timePicker.props().maxTime, MAX_DATE);
         });
     });
 
@@ -430,37 +441,16 @@ describe("<DatePicker>", () => {
         it("all shortcuts are displayed as inactive when none are selected", () => {
             const { root } = wrap(<DatePicker shortcuts={true} />);
 
-            assert.isFalse(
-                root
-                    .find(Shortcuts)
-                    .find(Menu)
-                    .find(MenuItem)
-                    .find(`.${CoreClasses.ACTIVE}`)
-                    .exists(),
-            );
+            assert.isFalse(root.find(Shortcuts).find(Menu).find(MenuItem).find(`.${CoreClasses.ACTIVE}`).exists());
         });
 
         it("corresponding shortcut is displayed as active when selected", () => {
             const selectedShortcut = 0;
             const { root } = wrap(<DatePicker shortcuts={true} selectedShortcutIndex={selectedShortcut} />);
 
-            assert.isTrue(
-                root
-                    .find(Shortcuts)
-                    .find(Menu)
-                    .find(MenuItem)
-                    .find(`.${CoreClasses.ACTIVE}`)
-                    .exists(),
-            );
+            assert.isTrue(root.find(Shortcuts).find(Menu).find(MenuItem).find(`.${CoreClasses.ACTIVE}`).exists());
 
-            assert.lengthOf(
-                root
-                    .find(Shortcuts)
-                    .find(Menu)
-                    .find(MenuItem)
-                    .find(`.${CoreClasses.ACTIVE}`),
-                1,
-            );
+            assert.lengthOf(root.find(Shortcuts).find(Menu).find(MenuItem).find(`.${CoreClasses.ACTIVE}`), 1);
 
             assert.isTrue(root.state("selectedShortcutIndex") === selectedShortcut);
         });
@@ -624,9 +614,7 @@ describe("<DatePicker>", () => {
                 />,
             );
             assert.isTrue(onChangeSpy.notCalled);
-            root.find(`.${Classes.TIMEPICKER_ARROW_BUTTON}.${Classes.TIMEPICKER_HOUR}`)
-                .first()
-                .simulate("click");
+            root.find(`.${Classes.TIMEPICKER_ARROW_BUTTON}.${Classes.TIMEPICKER_HOUR}`).first().simulate("click");
             assert.isTrue(onChangeSpy.calledOnce);
             const cbHour = onChangeSpy.firstCall.args[0].getHours();
             assert.strictEqual(cbHour, defaultValue.getHours() + 1);
@@ -702,10 +690,7 @@ describe("<DatePicker>", () => {
 
     it("selects the current day when Today is clicked", () => {
         const { root } = wrap(<DatePicker showActionsBar={true} />);
-        root.find({ className: Classes.DATEPICKER_FOOTER })
-            .find(Button)
-            .first()
-            .simulate("click");
+        root.find({ className: Classes.DATEPICKER_FOOTER }).find(Button).first().simulate("click");
 
         const today = new Date();
         const value = root.state("value");
@@ -717,10 +702,7 @@ describe("<DatePicker>", () => {
     it("clears the value when Clear is clicked", () => {
         const { getDay, root } = wrap(<DatePicker showActionsBar={true} />);
         getDay().simulate("click");
-        root.find({ className: Classes.DATEPICKER_FOOTER })
-            .find(Button)
-            .last()
-            .simulate("click");
+        root.find({ className: Classes.DATEPICKER_FOOTER }).find(Button).last().simulate("click");
         assert.isNull(root.state("value"));
     });
 
@@ -733,39 +715,20 @@ describe("<DatePicker>", () => {
                     wrapper.find(`.${Classes.DATEPICKER_DAY_SELECTED}`).map(d => +d.text()),
                     days,
                 ),
-            clickNextMonth: () =>
-                wrapper
-                    .find(Button)
-                    .last()
-                    .simulate("click"),
-            clickPreviousMonth: () =>
-                wrapper
-                    .find(Button)
-                    .first()
-                    .simulate("click"),
+            clickNextMonth: () => wrapper.find(Button).last().simulate("click"),
+            clickPreviousMonth: () => wrapper.find(Button).first().simulate("click"),
             clickShortcut: (index = 0) => {
-                wrapper
-                    .find(`.${Classes.DATERANGEPICKER_SHORTCUTS}`)
-                    .hostNodes()
-                    .find("a")
-                    .at(index)
-                    .simulate("click");
+                wrapper.find(`.${Classes.DATERANGEPICKER_SHORTCUTS}`).hostNodes().find("a").at(index).simulate("click");
             },
             getDay: (dayNumber = 1) =>
                 wrapper
                     .find(`.${Classes.DATEPICKER_DAY}`)
                     .filterWhere(day => day.text() === "" + dayNumber && !day.hasClass(Classes.DATEPICKER_DAY_OUTSIDE)),
-            months: wrapper
-                .find(HTMLSelect)
-                .filter({ className: Classes.DATEPICKER_MONTH_SELECT })
-                .find("select"),
+            months: wrapper.find(HTMLSelect).filter({ className: Classes.DATEPICKER_MONTH_SELECT }).find("select"),
             root: wrapper,
             setTimeInput: (precision: TimePrecision | "hour", value: number) =>
                 wrapper.find(`.${Classes.TIMEPICKER}-${precision}`).simulate("blur", { target: { value } }),
-            years: wrapper
-                .find(HTMLSelect)
-                .filter({ className: Classes.DATEPICKER_YEAR_SELECT })
-                .find("select"),
+            years: wrapper.find(HTMLSelect).filter({ className: Classes.DATEPICKER_YEAR_SELECT }).find("select"),
         };
     }
 });

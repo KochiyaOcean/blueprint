@@ -27,7 +27,7 @@ import * as React from "react";
  * chrome tests.
  */
 export function dispatchTestKeyboardEvent(target: EventTarget, eventType: string, key: string, shift = false) {
-    return dispatchTestKeyboardEventWithCode(target, eventType, key, key.charCodeAt(0), shift);
+    dispatchTestKeyboardEventWithCode(target, eventType, key, key.charCodeAt(0), shift);
 }
 
 /**
@@ -81,7 +81,7 @@ function detectBrowser() {
     }
 
     // Internet Explorer 6-11
-    if (/*@cc_on!@*/ false || !!(document as any).documentMode) {
+    if (/* @cc_on!@*/ false || !!(document as any).documentMode) {
         return Browser.IE;
     }
 
@@ -102,12 +102,26 @@ function detectBrowser() {
 // tl;dr PhantomJS sucks so we have to manually create click events
 export function createMouseEvent(eventType = "click", clientX = 0, clientY = 0) {
     const event = document.createEvent("MouseEvent");
+
+    // https://developer.mozilla.org/en-US/docs/Web/API/UIEvent/detail
+    let detailArg = 0;
+    switch (eventType) {
+        case "click":
+        case "dblclick":
+            detailArg = 1;
+            break;
+        case "mouseup":
+        case "mousedown":
+            detailArg = 2;
+            break;
+    }
+
     event.initMouseEvent(
         eventType,
         true /* bubble */,
         true /* cancelable */,
-        window,
-        null,
+        window /* viewArg */,
+        detailArg,
         0,
         0,
         clientX,
@@ -146,6 +160,7 @@ export function dispatchTouchEvent(target: EventTarget, eventType = "touchstart"
  * We can't simply call mount() here since React 16 throws before we can even validate the errors thrown
  * in component constructors.
  */
+// eslint-disable-next-line @typescript-eslint/ban-types
 export function expectPropValidationError<P extends object>(
     Component: React.ComponentClass<P>,
     props: P & { children?: React.ReactNode },
@@ -154,7 +169,7 @@ export function expectPropValidationError<P extends object>(
 ) {
     const { defaultProps = {} } = Component;
     // HACKHACK: weird casts ahead
-    // tslint:disable-next-line no-object-literal-type-assertion
+    // eslint-disable-next-line @typescript-eslint/ban-types, @typescript-eslint/consistent-type-assertions
     expect(() => new Component({ ...(defaultProps as object), ...(props as object) } as P)).to.throw(
         errorMessage,
         assertionMessage,

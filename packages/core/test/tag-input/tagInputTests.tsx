@@ -25,7 +25,7 @@ import {
 import * as React from "react";
 import * as sinon from "sinon";
 
-import { Button, Classes, Intent, ITagInputProps, Keys, Tag, TagInput } from "../../src/index";
+import { Button, Classes, Intent, ITagInputProps, Keys, Tag, TagInput } from "../../src";
 
 /**
  * @see https://github.com/DefinitelyTyped/DefinitelyTyped/issues/26979#issuecomment-465304376
@@ -114,10 +114,7 @@ describe("<TagInput>", () => {
         const onRemove = sinon.spy();
         // requires full mount to support data attributes and parentElement
         const wrapper = mount(<TagInput onRemove={onRemove} values={VALUES} />);
-        wrapper
-            .find("button")
-            .at(1)
-            .simulate("click");
+        wrapper.find("button").at(1).simulate("click");
         assert.isTrue(onRemove.calledOnce);
         assert.sameMembers(onRemove.args[0], [VALUES[1], 1]);
     });
@@ -242,7 +239,7 @@ describe("<TagInput>", () => {
         });
 
         it("does not clear the input if the input is controlled", () => {
-            const wrapper = mountTagInput(undefined, { inputValue: NEW_VALUE });
+            const wrapper = mountTagInput(sinon.stub(), { inputValue: NEW_VALUE });
             pressEnterInInput(wrapper, NEW_VALUE);
             assert.strictEqual(wrapper.state().inputValue, NEW_VALUE);
         });
@@ -378,10 +375,7 @@ describe("<TagInput>", () => {
         it("is invoked when a tag is removed by clicking", () => {
             const onChange = sinon.stub();
             const wrapper = mount(<TagInput onChange={onChange} values={VALUES} />);
-            wrapper
-                .find("button")
-                .at(1)
-                .simulate("click");
+            wrapper.find("button").at(1).simulate("click");
             assert.isTrue(onChange.calledOnce);
             assert.deepEqual(onChange.args[0][0], [VALUES[0], VALUES[2]]);
         });
@@ -527,13 +521,7 @@ describe("<TagInput>", () => {
             wrapper.childAt(0).hasClass(Classes.DISABLED),
             `.${Classes.DISABLED} should be applied to tag-input`,
         );
-        assert.isTrue(
-            wrapper
-                .find(`.${Classes.INPUT_GHOST}`)
-                .first()
-                .prop("disabled"),
-            "input should be disabled",
-        );
+        assert.isTrue(wrapper.find(`.${Classes.INPUT_GHOST}`).first().prop("disabled"), "input should be disabled");
         wrapper.find(Tag).forEach(tag => {
             assert.lengthOf(tag.find("." + Classes.TAG_REMOVE), 0, "tag should not have tag-remove button");
         });
@@ -611,10 +599,7 @@ function runKeyPressTest(callbackName: "onKeyDown" | "onKeyUp", startIndex: numb
     wrapper.setState({ activeIndex: startIndex });
 
     const eventName = callbackName === "onKeyDown" ? "keydown" : "keyup";
-    wrapper
-        .find("input")
-        .simulate("focus")
-        .simulate(eventName, { which: Keys.ENTER });
+    wrapper.find("input").simulate("focus").simulate(eventName, { which: Keys.ENTER });
 
     assert.strictEqual(callbackSpy.callCount, 1, "container callback call count");
     assert.strictEqual(callbackSpy.firstCall.args[0].which, Keys.ENTER, "first arg (event)");

@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-import { Icon, Utils as CoreUtils } from "@blueprintjs/core";
 import classNames from "classnames";
 import * as React from "react";
 
+import { Icon, Utils as CoreUtils } from "@blueprintjs/core";
+
 import { Grid } from "../common";
-import { IFocusedCellCoordinates } from "../common/cell";
+import { FocusedCellCoordinates } from "../common/cell";
 import * as Classes from "../common/classes";
 import { CLASSNAME_EXCLUDED_FROM_TEXT_MEASUREMENT } from "../common/utils";
 import { DragEvents } from "../interactions/dragEvents";
-import { IClientCoordinates, ICoordinateData } from "../interactions/draggable";
+import { IClientCoordinates, ICoordinateData } from "../interactions/dragTypes";
 import { DragReorderable, IReorderableProps } from "../interactions/reorderable";
 import { Resizable } from "../interactions/resizable";
 import { ILockableLayout, Orientation } from "../interactions/resizeHandle";
 import { DragSelectable, ISelectableProps } from "../interactions/selectable";
 import { ILocator } from "../locator";
-import { IRegion, RegionCardinality, Regions } from "../regions";
+import { Region, RegionCardinality, Regions } from "../regions";
 import { IHeaderCellProps } from "./headerCell";
 
 export type IHeaderCellRenderer = (index: number) => React.ReactElement<IHeaderCellProps>;
@@ -38,7 +39,7 @@ export interface IHeaderProps extends ILockableLayout, IReorderableProps, ISelec
     /**
      * The currently focused cell.
      */
-    focusedCell?: IFocusedCellCoordinates;
+    focusedCell?: FocusedCellCoordinates;
 
     /**
      * The grid computes sizes of cells, rows, or columns from the
@@ -48,6 +49,7 @@ export interface IHeaderProps extends ILockableLayout, IReorderableProps, ISelec
 
     /**
      * Enables/disables the reordering interaction.
+     *
      * @internal
      * @default false
      */
@@ -55,6 +57,7 @@ export interface IHeaderProps extends ILockableLayout, IReorderableProps, ISelec
 
     /**
      * Enables/disables the resize interaction.
+     *
      * @default true
      */
     isResizable?: boolean;
@@ -67,6 +70,7 @@ export interface IHeaderProps extends ILockableLayout, IReorderableProps, ISelec
     /**
      * If true, all header cells render their loading state except for those
      * who have their `loading` prop explicitly set to false.
+     *
      * @default false;
      */
     loading?: boolean;
@@ -136,7 +140,7 @@ export interface IInternalHeaderProps extends IHeaderProps {
     /**
      * An array containing the table's selection Regions.
      */
-    selectedRegions: IRegion[];
+    selectedRegions: Region[];
 
     /**
      * Converts a point on the screen to a row or column index in the table grid.
@@ -212,7 +216,7 @@ export interface IInternalHeaderProps extends IHeaderProps {
      * Converts a range to a region. This should be Regions.column for column headers and
      * Regions.row for row headers.
      */
-    toRegion: (index1: number, index2?: number) => IRegion;
+    toRegion: (index1: number, index2?: number) => Region;
 
     /**
      * A callback that wraps the rendered cell components in additional parent elements as needed.
@@ -230,7 +234,7 @@ export interface IHeaderState {
     hasValidSelection?: boolean;
 }
 
-const SHALLOW_COMPARE_PROP_KEYS_BLACKLIST: Array<keyof IInternalHeaderProps> = ["focusedCell", "selectedRegions"];
+const SHALLOW_COMPARE_PROP_KEYS_DENYLIST: Array<keyof IInternalHeaderProps> = ["focusedCell", "selectedRegions"];
 
 export class Header extends React.Component<IInternalHeaderProps, IHeaderState> {
     protected activationIndex: number;
@@ -250,8 +254,10 @@ export class Header extends React.Component<IInternalHeaderProps, IHeaderState> 
     public shouldComponentUpdate(nextProps?: IInternalHeaderProps, nextState?: IHeaderState) {
         return (
             !CoreUtils.shallowCompareKeys(this.state, nextState) ||
-            !CoreUtils.shallowCompareKeys(this.props, nextProps, { exclude: SHALLOW_COMPARE_PROP_KEYS_BLACKLIST }) ||
-            !CoreUtils.deepCompareKeys(this.props, nextProps, SHALLOW_COMPARE_PROP_KEYS_BLACKLIST)
+            !CoreUtils.shallowCompareKeys(this.props, nextProps, {
+                exclude: SHALLOW_COMPARE_PROP_KEYS_DENYLIST,
+            }) ||
+            !CoreUtils.deepCompareKeys(this.props, nextProps, SHALLOW_COMPARE_PROP_KEYS_DENYLIST)
         );
     }
 
@@ -268,12 +274,12 @@ export class Header extends React.Component<IInternalHeaderProps, IHeaderState> 
         return this.props.convertPointToIndex(coord);
     };
 
-    private locateClick = (event: MouseEvent): IRegion => {
+    private locateClick = (event: MouseEvent): Region => {
         this.activationIndex = this.convertEventToIndex(event);
         return this.props.toRegion(this.activationIndex);
     };
 
-    private locateDragForSelection = (_event: MouseEvent, coords: ICoordinateData, returnEndOnly = false): IRegion => {
+    private locateDragForSelection = (_event: MouseEvent, coords: ICoordinateData, returnEndOnly = false): Region => {
         const coord = this.props.getDragCoordinate(coords.current);
         const indexStart = this.activationIndex;
         const indexEnd = this.props.convertPointToIndex(coord);
@@ -335,8 +341,7 @@ export class Header extends React.Component<IInternalHeaderProps, IHeaderState> 
 
         const modifiedHandleSizeChanged = (size: number) => this.props.handleSizeChanged(index, size);
         const modifiedHandleResizeEnd = (size: number) => this.props.handleResizeEnd(index, size);
-        const modifiedHandleResizeHandleDoubleClick = () =>
-            CoreUtils.safeInvoke(this.props.handleResizeDoubleClick, index);
+        const modifiedHandleResizeHandleDoubleClick = () => this.props.handleResizeDoubleClick?.(index);
 
         const baseChildren = (
             <DragSelectable
@@ -357,9 +362,12 @@ export class Header extends React.Component<IInternalHeaderProps, IHeaderState> 
                     isResizable={this.props.isResizable}
                     maxSize={this.props.maxSize}
                     minSize={this.props.minSize}
+                    // eslint-disable-next-line react/jsx-no-bind
                     onDoubleClick={modifiedHandleResizeHandleDoubleClick}
                     onLayoutLock={this.props.onLayoutLock}
+                    // eslint-disable-next-line react/jsx-no-bind
                     onResizeEnd={modifiedHandleResizeEnd}
+                    // eslint-disable-next-line react/jsx-no-bind
                     onSizeChanged={modifiedHandleSizeChanged}
                     orientation={this.props.resizeOrientation}
                     size={this.props.getCellSize(index)}
@@ -388,7 +396,7 @@ export class Header extends React.Component<IInternalHeaderProps, IHeaderState> 
                       <div
                           className={classNames(Classes.TABLE_REORDER_HANDLE, CLASSNAME_EXCLUDED_FROM_TEXT_MEASUREMENT)}
                       >
-                          <Icon icon="drag-handle-vertical" />
+                          <Icon icon="drag-handle-vertical" title="Press down to drag" />
                       </div>
                   </div>,
                   false,
@@ -422,7 +430,7 @@ export class Header extends React.Component<IInternalHeaderProps, IHeaderState> 
         );
     }
 
-    private handleDragSelectableSelection = (selectedRegions: IRegion[]) => {
+    private handleDragSelectableSelection = (selectedRegions: Region[]) => {
         this.props.onSelection(selectedRegions);
         this.setState({ hasValidSelection: false });
     };

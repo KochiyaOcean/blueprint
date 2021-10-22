@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
+import { DateRange } from "./dateRange";
 import { Months } from "./months";
-
-export type DateRange = [Date | null, Date | null];
 
 export function isDateValid(date: Date | false | null): date is Date {
     return date instanceof Date && !isNaN(date.valueOf());
@@ -234,4 +233,8 @@ export function get24HourFrom12Hour(hour: number, isPm: boolean): number {
     }
     const newHour = hour === 12 ? 0 : hour;
     return isPm ? newHour + 12 : newHour;
+}
+
+export function isToday(date: Date): boolean {
+    return areSameDay(date, new Date());
 }

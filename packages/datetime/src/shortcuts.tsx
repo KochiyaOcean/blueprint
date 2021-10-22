@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-import { Classes, Menu, MenuItem } from "@blueprintjs/core";
 import * as React from "react";
+
+import { Classes, Menu, MenuItem } from "@blueprintjs/core";
+
 import { DATERANGEPICKER_SHORTCUTS } from "./common/classes";
-import { clone, DateRange, isDayRangeInRange } from "./common/dateUtils";
+import { DateRange } from "./common/dateRange";
+import { clone, isDayRangeInRange } from "./common/dateUtils";
 import { TimePrecision } from "./timePicker";
 
 export interface IDateShortcutBase {
@@ -29,11 +32,15 @@ export interface IDateShortcutBase {
      * times as well as the dates. By default, time components of a shortcut are
      * ignored; clicking a shortcut takes the date components of the `dateRange`
      * and combines them with the currently selected time.
+     *
      * @default false
      */
     includeTime?: boolean;
 }
 
+// eslint-disable-next-line deprecation/deprecation
+export type DateRangeShortcut = IDateRangeShortcut;
+/** @deprecated use DateRangeShortcut */
 export interface IDateRangeShortcut extends IDateShortcutBase {
     /**
      * Date range represented by this shortcut. Note that time components of a
@@ -42,6 +49,9 @@ export interface IDateRangeShortcut extends IDateShortcutBase {
     dateRange: DateRange;
 }
 
+// eslint-disable-next-line deprecation/deprecation
+export type DatePickerShortcut = IDatePickerShortcut;
+/** @deprecated use DatePickerShortcut */
 export interface IDatePickerShortcut extends IDateShortcutBase {
     /**
      * Date represented by this shortcut. Note that time components of a
@@ -54,13 +64,14 @@ export interface IShortcutsProps {
     allowSingleDayRange: boolean;
     minDate: Date;
     maxDate: Date;
-    shortcuts: IDateRangeShortcut[] | true;
+    shortcuts: DateRangeShortcut[] | true;
     timePrecision: TimePrecision;
     selectedShortcutIndex?: number;
-    onShortcutClick: (shortcut: IDateRangeShortcut, index: number) => void;
+    onShortcutClick: (shortcut: DateRangeShortcut, index: number) => void;
     /**
      * The DatePicker component reuses this component for a single date.
      * This changes the default shortcut labels and affects which shortcuts are used.
+     *
      * @default false
      */
     useSingleDateShortcuts?: boolean;
@@ -99,7 +110,7 @@ export class Shortcuts extends React.PureComponent<IShortcutsProps> {
         );
     }
 
-    private getShorcutClickHandler = (shortcut: IDateRangeShortcut, index: number) => () => {
+    private getShorcutClickHandler = (shortcut: DateRangeShortcut, index: number) => () => {
         const { onShortcutClick } = this.props;
 
         onShortcutClick(shortcut, index);
@@ -112,7 +123,7 @@ export class Shortcuts extends React.PureComponent<IShortcutsProps> {
     };
 }
 
-function createShortcut(label: string, dateRange: DateRange): IDateRangeShortcut {
+function createShortcut(label: string, dateRange: DateRange): DateRangeShortcut {
     return { dateRange, label };
 }
 

@@ -14,8 +14,13 @@
  */
 
 // @ts-check
-const { generateIsomorphicTests } = require("@blueprintjs/test-commons");
+
+require("@blueprintjs/test-commons/bootstrap");
+
 const React = require("react");
+
+const { generateIsomorphicTests } = require("@blueprintjs/test-commons");
+
 const Core = require("../lib/cjs");
 
 const requiredChild = React.createElement("button");
@@ -44,6 +49,15 @@ describe("Core isomorphic rendering", () => {
         Icon: {
             props: { icon: "build" },
         },
+        MultistepDialog: {
+            props: { isOpen: true, usePortal: false },
+            children: React.createElement(Core.DialogStep, {
+                key: 1,
+                id: 1,
+                title: "Step one",
+                panel: React.createElement("div"),
+            }),
+        },
         KeyCombo: {
             props: { combo: "?" },
         },
@@ -53,11 +67,14 @@ describe("Core isomorphic rendering", () => {
         Overlay: {
             props: { lazy: false, usePortal: false },
         },
+        OverlayToaster: {
+            skip: true,
+        },
         PanelStack: {
             props: {
-                initialPanel: { component: () => null, props: {}, title: "" }
+                initialPanel: { component: () => null, props: {}, title: "" },
             },
-            children: ""
+            children: "",
         },
         Portal: {
             className: false, // only renders in browser (`document`)
@@ -77,11 +94,11 @@ describe("Core isomorphic rendering", () => {
         },
         Tooltip: {
             props: { content: React.createElement("h1", {}, "content") },
-            children: requiredChild
+            children: requiredChild,
         },
         Toaster: {
             props: { usePortal: false },
-            children: React.createElement(Core.Toast, { message: "Toast" })
+            children: React.createElement(Core.Toast, { message: "Toast" }),
         },
     });
 });

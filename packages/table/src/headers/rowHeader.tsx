@@ -19,14 +19,17 @@ import * as React from "react";
 
 import * as Classes from "../common/classes";
 import { IRowIndices } from "../common/grid";
-import { IClientCoordinates } from "../interactions/draggable";
+import { IClientCoordinates } from "../interactions/dragTypes";
 import { IIndexedResizeCallback } from "../interactions/resizable";
 import { Orientation } from "../interactions/resizeHandle";
 import { RegionCardinality, Regions } from "../regions";
 import { Header, IHeaderProps } from "./header";
 import { IRowHeaderCellProps, RowHeaderCell } from "./rowHeaderCell";
 
+/** @deprecated use RowHeaderRenderer */
 export type IRowHeaderRenderer = (rowIndex: number) => React.ReactElement<IRowHeaderCellProps>;
+// eslint-disable-next-line deprecation/deprecation
+export type RowHeaderRenderer = IRowHeaderRenderer;
 
 export interface IRowHeights {
     minRowHeight?: number;
@@ -43,10 +46,10 @@ export interface IRowHeaderProps extends IHeaderProps, IRowHeights, IRowIndices 
     /**
      * Renders the cell for each row header
      */
-    rowHeaderCellRenderer?: IRowHeaderRenderer;
+    rowHeaderCellRenderer?: RowHeaderRenderer;
 }
 
-export class RowHeader extends React.Component<IRowHeaderProps, {}> {
+export class RowHeader extends React.Component<IRowHeaderProps> {
     public static defaultProps = {
         rowHeaderCellRenderer: renderDefaultRowHeader,
     };

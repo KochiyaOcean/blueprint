@@ -20,7 +20,8 @@ import * as React from "react";
 import * as sinon from "sinon";
 
 import { EditableText } from "@blueprintjs/core";
-import { EditableName } from "../src/index";
+
+import { EditableName } from "../src";
 
 describe("<EditableName>", () => {
     it("renders", () => {
@@ -81,9 +82,7 @@ describe("<EditableName>", () => {
             .simulate("change", { target: { value: CHANGED_VALUE } });
         expect(onChangeSpy.firstCall.args).to.deep.equal([CHANGED_VALUE, INDEX]);
 
-        elem.find(EditableText)
-            .find("input")
-            .simulate("blur");
+        elem.find(EditableText).find("input").simulate("blur");
         expect(onChangeSpy.firstCall.args).to.deep.equal([CHANGED_VALUE, INDEX]);
     });
 });

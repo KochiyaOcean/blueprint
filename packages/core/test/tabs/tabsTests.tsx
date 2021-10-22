@@ -106,8 +106,10 @@ describe("<Tabs>", () => {
         const tabClassName = "tabClassName";
         const wrapper = mount(
             <Tabs id={ID}>
-                <Tab id="first" title="First" className={tabClassName} panel={<Panel title="first" />} />,
-                <Tab id="second" title="Second" className={tabClassName} panel={<Panel title="second" />} />,
+                <Tab id="first" title="First" className={tabClassName} panel={<Panel title="first" />} />
+                ,
+                <Tab id="second" title="Second" className={tabClassName} panel={<Panel title="second" />} />
+                ,
                 <Tab id="third" title="Third" className={tabClassName} panel={<Panel title="third" />} />,
             </Tabs>,
         );
@@ -119,7 +121,8 @@ describe("<Tabs>", () => {
         const wrapper = mount(
             <Tabs id={ID}>
                 <Tab id="first" title="First" panel={<Panel title="first" />} />,
-                <Tab id="second" title="Second" panelClassName={panelClassName} panel={<Panel title="second" />} />,
+                <Tab id="second" title="Second" panelClassName={panelClassName} panel={<Panel title="second" />} />
+                ,
                 <Tab id="third" title="Third" panel={<Panel title="third" />} />,
             </Tabs>,
         );
@@ -186,10 +189,7 @@ describe("<Tabs>", () => {
         );
         assert.equal(wrapper.state("selectedTabId"), TAB_IDS[0]);
         // last Tab is inside nested
-        wrapper
-            .find(TAB)
-            .last()
-            .simulate("click");
+        wrapper.find(TAB).last().simulate("click");
         assert.equal(wrapper.state("selectedTabId"), TAB_IDS[0]);
         assert.isTrue(changeSpy.notCalled, "onChange invoked");
     });
@@ -390,10 +390,10 @@ describe("<Tabs>", () => {
         });
     });
 
-    function findTabById(wrapper: ReactWrapper<ITabsProps, {}>, id: string) {
+    function findTabById(wrapper: ReactWrapper<ITabsProps>, id: string) {
         // Need this to get the right overload signature
-        // tslint:disable-next-line:no-object-literal-type-assertion
-        return wrapper.find(TAB).filter({ "data-tab-id": id } as React.HTMLAttributes<{}>);
+        // eslint-disable-line @typescript-eslint/consistent-type-assertions
+        return wrapper.find(TAB).filter({ "data-tab-id": id } as React.HTMLAttributes<HTMLElement>);
     }
 
     function assertIndicatorPosition(wrapper: ReactWrapper<ITabsProps, ITabsState>, selectedTabId: string) {
@@ -401,7 +401,7 @@ describe("<Tabs>", () => {
         assert.isDefined(style, "Tabs should have a indicatorWrapperStyle prop set");
         const node = wrapper.getDOMNode();
         const expected = (node.querySelector(`${TAB}[data-tab-id='${selectedTabId}']`) as HTMLLIElement).offsetLeft;
-        assert.isTrue(style.transform.indexOf(`${expected}px`) !== -1, "indicator has not moved correctly");
+        assert.isTrue(style?.transform?.indexOf(`${expected}px`) !== -1, "indicator has not moved correctly");
     }
 
     function getTabsContents(tabIds: string[] = TAB_IDS): Array<React.ReactElement<any>> {
@@ -409,4 +409,4 @@ describe("<Tabs>", () => {
     }
 });
 
-const Panel: React.SFC<{ title: string }> = ({ title }) => <strong>{title} panel</strong>;
+const Panel: React.FunctionComponent<{ title: string }> = ({ title }) => <strong>{title} panel</strong>;

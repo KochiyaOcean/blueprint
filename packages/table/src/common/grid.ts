@@ -16,7 +16,7 @@
 
 import { CSSProperties } from "react";
 
-import { IRegion, RegionCardinality, Regions } from "../regions";
+import { Region, RegionCardinality, Regions } from "../regions";
 import * as Classes from "./classes";
 import { Rect } from "./rect";
 import { Utils } from "./utils";
@@ -40,19 +40,31 @@ export interface IColumnIndices {
  */
 export class Grid {
     public static DEFAULT_BLEED = 3;
+
     public static DEFAULT_MAX_COLUMNS = 50;
+
     public static DEFAULT_MAX_ROWS = 200;
+
     public static DEFAULT_GHOST_HEIGHT = 20;
+
     public static DEFAULT_GHOST_WIDTH = 150;
 
     public numCols: number;
+
     public numRows: number;
+
     private bleed: number;
+
     private columnWidths: number[];
+
     private rowHeights: number[];
+
     private cumulativeColumnWidths: number[];
+
     private cumulativeRowHeights: number[];
+
     private ghostHeight: number;
+
     private ghostWidth: number;
 
     /**
@@ -241,9 +253,10 @@ export class Grid {
         }
 
         const searchEnd = includeGhostCells ? Math.max(this.numRows, Grid.DEFAULT_MAX_ROWS) : this.numRows;
+        const { top = 0, height } = rect;
         const { start, end } = this.getIndicesInInterval(
-            rect.top,
-            rect.top + rect.height,
+            top,
+            top + height,
             searchEnd,
             !includeGhostCells,
             this.getCumulativeHeightAt,
@@ -270,9 +283,10 @@ export class Grid {
         }
 
         const searchEnd = includeGhostCells ? Math.max(this.numCols, Grid.DEFAULT_MAX_COLUMNS) : this.numCols;
+        const { left = 0, width } = rect;
         const { start, end } = this.getIndicesInInterval(
-            rect.left,
-            rect.left + rect.width,
+            left,
+            left + width,
             searchEnd,
             !includeGhostCells,
             this.getCumulativeWidthAt,
@@ -307,7 +321,7 @@ export class Grid {
         return [];
     }
 
-    public getRegionStyle(region: IRegion): CSSProperties {
+    public getRegionStyle(region: Region): CSSProperties {
         const cardinality = Regions.getRegionCardinality(region);
         switch (cardinality) {
             case RegionCardinality.CELLS: {

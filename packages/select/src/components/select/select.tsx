@@ -18,24 +18,38 @@ import classNames from "classnames";
 import * as React from "react";
 
 import {
+    AbstractPureComponent2,
     Button,
     DISPLAYNAME_PREFIX,
-    HTMLInputProps,
-    IInputGroupProps,
+    InputGroupProps2,
     InputGroup,
     IPopoverProps,
+    IRef,
     Keys,
     Popover,
     Position,
-    Utils,
+    refHandler,
+    setRef,
 } from "@blueprintjs/core";
+
 import { Classes, IListItemsProps } from "../../common";
 import { IQueryListRendererProps, QueryList } from "../query-list/queryList";
 
+// eslint-disable-next-line deprecation/deprecation
+export type SelectProps<T> = ISelectProps<T>;
+/** @deprecated use SelectProps */
 export interface ISelectProps<T> extends IListItemsProps<T> {
+    /**
+     * Whether the component should take up the full width of its container.
+     * This overrides `popoverProps.fill`. You also have to ensure that the child
+     * component has `fill` set to `true` or is styled appropriately.
+     */
+    fill?: boolean;
+
     /**
      * Whether the dropdown list can be filtered.
      * Disabling this option will remove the `InputGroup` and ignore `inputProps`.
+     *
      * @default true
      */
     filterable?: boolean;
@@ -44,6 +58,7 @@ export interface ISelectProps<T> extends IListItemsProps<T> {
      * Whether the component is non-interactive.
      * If true, the list's item renderer will not be called.
      * Note that you'll also need to disable the component's children, if appropriate.
+     *
      * @default false
      */
     disabled?: boolean;
@@ -53,14 +68,26 @@ export interface ISelectProps<T> extends IListItemsProps<T> {
      * `onQueryChange` instead of `inputProps.value` and `inputProps.onChange`
      * to control this input.
      */
-    inputProps?: IInputGroupProps & HTMLInputProps;
+    inputProps?: InputGroupProps2;
+
+    /**
+     * Whether the select popover should be styled so that it matches the width of the target.
+     * This is done using a popper.js modifier passed through `popoverProps`.
+     *
+     * Note that setting `matchTargetWidth={true}` will also set `popoverProps.usePortal={false}` and `popoverProps.wrapperTagName="div"`.
+     *
+     * @default false
+     */
+    matchTargetWidth?: boolean;
 
     /** Props to spread to `Popover`. Note that `content` cannot be changed. */
+    // eslint-disable-next-line @typescript-eslint/ban-types
     popoverProps?: Partial<IPopoverProps> & object;
 
     /**
      * Whether the active item should be reset to the first matching item _when
      * the popover closes_. The query will also be reset to the empty string.
+     *
      * @default false
      */
     resetOnClose?: boolean;
@@ -70,26 +97,26 @@ export interface ISelectState {
     isOpen: boolean;
 }
 
-export class Select<T> extends React.PureComponent<ISelectProps<T>, ISelectState> {
+export class Select<T> extends AbstractPureComponent2<SelectProps<T>, ISelectState> {
     public static displayName = `${DISPLAYNAME_PREFIX}.Select`;
 
-    public static ofType<T>() {
-        return Select as new (props: ISelectProps<T>) => Select<T>;
+    public static ofType<U>() {
+        return Select as new (props: SelectProps<U>) => Select<U>;
     }
 
     public state: ISelectState = { isOpen: false };
 
     private TypedQueryList = QueryList.ofType<T>();
-    private input: HTMLInputElement | null = null;
+
+    public inputElement: HTMLInputElement | null = null;
+
     private queryList: QueryList<T> | null = null;
+
     private previousFocusedElement: HTMLElement | undefined;
-    private refHandlers = {
-        input: (ref: HTMLInputElement | null) => {
-            this.input = ref;
-            Utils.safeInvokeMember(this.props.inputProps, "inputRef", ref);
-        },
-        queryList: (ref: QueryList<T> | null) => (this.queryList = ref),
-    };
+
+    private handleInputRef: IRef<HTMLInputElement> = refHandler(this, "inputElement", this.props.inputProps?.inputRef);
+
+    private handleQueryListRef = (ref: QueryList<T> | null) => (this.queryList = ref);
 
     public render() {
         // omit props specific to this component, spread the rest.
@@ -99,13 +126,19 @@ export class Select<T> extends React.PureComponent<ISelectProps<T>, ISelectState
             <this.TypedQueryList
                 {...restProps}
                 onItemSelect={this.handleItemSelect}
-                ref={this.refHandlers.queryList}
+                ref={this.handleQueryListRef}
                 renderer={this.renderQueryList}
             />
         );
     }
 
-    public componentDidUpdate(_prevProps: ISelectProps<T>, prevState: ISelectState) {
+    public componentDidUpdate(prevProps: SelectProps<T>, prevState: ISelectState) {
+        if (prevProps.inputProps?.inputRef !== this.props.inputProps?.inputRef) {
+            setRef(prevProps.inputProps?.inputRef, null);
+            this.handleInputRef = refHandler(this, "inputElement", this.props.inputProps?.inputRef);
+            setRef(this.props.inputProps?.inputRef, this.inputElement);
+        }
+
         if (this.state.isOpen && !prevState.isOpen && this.queryList != null) {
             this.queryList.scrollActiveItemIntoView();
         }
@@ -113,7 +146,36 @@ export class Select<T> extends React.PureComponent<ISelectProps<T>, ISelectState
 
     private renderQueryList = (listProps: IQueryListRendererProps<T>) => {
         // not using defaultProps cuz they're hard to type with generics (can't use <T> on static members)
-        const { filterable = true, disabled = false, inputProps = {}, popoverProps = {} } = this.props;
+        const {
+            fill,
+            filterable = true,
+            disabled = false,
+            inputProps = {},
+            popoverProps = {},
+            matchTargetWidth,
+        } = this.props;
+
+        if (fill) {
+            popoverProps.fill = true;
+        }
+
+        if (matchTargetWidth) {
+            if (popoverProps.modifiers == null) {
+                popoverProps.modifiers = {};
+            }
+
+            popoverProps.modifiers.minWidth = {
+                enabled: true,
+                fn: data => {
+                    data.styles.width = `${data.offsets.reference.width}px`;
+                    return data;
+                },
+                order: 800,
+            };
+
+            popoverProps.usePortal = false;
+            popoverProps.wrapperTagName = "div";
+        }
 
         const input = (
             <InputGroup
@@ -121,7 +183,7 @@ export class Select<T> extends React.PureComponent<ISelectProps<T>, ISelectState
                 placeholder="Filter..."
                 rightElement={this.maybeRenderClearButton(listProps.query)}
                 {...inputProps}
-                inputRef={this.refHandlers.input}
+                inputRef={this.handleInputRef}
                 onChange={listProps.handleQueryChange}
                 value={listProps.query}
             />
@@ -129,6 +191,7 @@ export class Select<T> extends React.PureComponent<ISelectProps<T>, ISelectState
 
         const { handleKeyDown, handleKeyUp } = listProps;
         return (
+            /* eslint-disable-next-line deprecation/deprecation */
             <Popover
                 autoFocus={false}
                 enforceFocus={false}
@@ -138,7 +201,9 @@ export class Select<T> extends React.PureComponent<ISelectProps<T>, ISelectState
                 {...popoverProps}
                 className={classNames(listProps.className, popoverProps.className)}
                 onInteraction={this.handlePopoverInteraction}
-                popoverClassName={classNames(Classes.SELECT_POPOVER, popoverProps.popoverClassName)}
+                popoverClassName={classNames(Classes.SELECT_POPOVER, popoverProps.popoverClassName, {
+                    [Classes.SELECT_MATCH_TARGET_WIDTH]: matchTargetWidth,
+                })}
                 onOpening={this.handlePopoverOpening}
                 onOpened={this.handlePopoverOpened}
                 onClosing={this.handlePopoverClosing}
@@ -153,6 +218,7 @@ export class Select<T> extends React.PureComponent<ISelectProps<T>, ISelectState
                     {filterable ? input : undefined}
                     {listProps.itemList}
                 </div>
+                {/* eslint-disable-next-line deprecation/deprecation */}
             </Popover>
         );
     };
@@ -163,6 +229,8 @@ export class Select<T> extends React.PureComponent<ISelectProps<T>, ISelectState
 
     private handleTargetKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
         // open popover when arrow key pressed on target while closed
+        // HACKHACK: https://github.com/palantir/blueprint/issues/4165
+        // eslint-disable-next-line deprecation/deprecation
         if (event.which === Keys.ARROW_UP || event.which === Keys.ARROW_DOWN) {
             event.preventDefault();
             this.setState({ isOpen: true });
@@ -171,12 +239,12 @@ export class Select<T> extends React.PureComponent<ISelectProps<T>, ISelectState
 
     private handleItemSelect = (item: T, event?: React.SyntheticEvent<HTMLElement>) => {
         this.setState({ isOpen: false });
-        Utils.safeInvoke(this.props.onItemSelect, item, event);
+        this.props.onItemSelect?.(item, event);
     };
 
-    private handlePopoverInteraction = (isOpen: boolean) => {
+    private handlePopoverInteraction = (isOpen: boolean, event?: React.SyntheticEvent<HTMLElement>) => {
         this.setState({ isOpen });
-        Utils.safeInvokeMember(this.props.popoverProps, "onInteraction", isOpen);
+        this.props.popoverProps?.onInteraction?.(isOpen, event);
     };
 
     private handlePopoverOpening = (node: HTMLElement) => {
@@ -187,7 +255,7 @@ export class Select<T> extends React.PureComponent<ISelectProps<T>, ISelectState
             this.resetQuery();
         }
 
-        Utils.safeInvokeMember(this.props.popoverProps, "onOpening", node);
+        this.props.popoverProps?.onOpening?.(node);
     };
 
     private handlePopoverOpened = (node: HTMLElement) => {
@@ -196,28 +264,28 @@ export class Select<T> extends React.PureComponent<ISelectProps<T>, ISelectState
             this.queryList.scrollActiveItemIntoView();
         }
 
-        requestAnimationFrame(() => {
+        this.requestAnimationFrame(() => {
             const { inputProps = {} } = this.props;
             // autofocus is enabled by default
-            if (inputProps.autoFocus !== false && this.input != null) {
-                this.input.focus();
+            if (inputProps.autoFocus !== false) {
+                this.inputElement?.focus();
             }
         });
 
-        Utils.safeInvokeMember(this.props.popoverProps, "onOpened", node);
+        this.props.popoverProps?.onOpened?.(node);
     };
 
     private handlePopoverClosing = (node: HTMLElement) => {
         // restore focus to saved element.
         // timeout allows popover to begin closing and remove focus handlers beforehand.
-        requestAnimationFrame(() => {
+        this.requestAnimationFrame(() => {
             if (this.previousFocusedElement !== undefined) {
                 this.previousFocusedElement.focus();
                 this.previousFocusedElement = undefined;
             }
         });
 
-        Utils.safeInvokeMember(this.props.popoverProps, "onClosing", node);
+        this.props.popoverProps?.onClosing?.(node);
     };
 
     private resetQuery = () => this.queryList && this.queryList.setQuery("", true);
