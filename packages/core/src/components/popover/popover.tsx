@@ -17,7 +17,6 @@
 import classNames from "classnames";
 import { ModifierFn } from "popper.js";
 import * as React from "react";
-import { polyfill } from "react-lifecycles-compat";
 import { Manager, Popper, PopperChildrenProps, Reference, ReferenceChildrenProps } from "react-popper";
 
 import { AbstractPureComponent2, Classes, IRef, refHandler, setRef } from "../../common";
@@ -110,12 +109,11 @@ export interface IPopoverState {
 }
 
 /** @deprecated use { Popover2 } from "@blueprintjs/popover2" */
-@polyfill
 export class Popover extends AbstractPureComponent2<IPopoverProps, IPopoverState> {
     public static displayName = `${DISPLAYNAME_PREFIX}.Popover`;
 
     // eslint-disable-next-line deprecation/deprecation
-    private popoverRef = Utils.createReactRef<HTMLDivElement>();
+    private popoverRef = React.createRef<HTMLDivElement>();
 
     public static defaultProps: IPopoverProps = {
         boundary: "scrollParent",
@@ -339,6 +337,7 @@ export class Popover extends AbstractPureComponent2<IPopoverProps, IPopoverState
                 [Classes.DARK]: this.props.inheritDarkTheme && this.state.hasDarkParent,
                 [Classes.MINIMAL]: this.props.minimal,
                 [Classes.POPOVER_CAPTURING_DISMISS]: this.props.captureDismiss,
+                [Classes.POPOVER_OUT_OF_BOUNDARIES]: popperProps.outOfBoundaries === true,
             },
             this.props.popoverClassName,
         );
@@ -477,7 +476,7 @@ export class Popover extends AbstractPureComponent2<IPopoverProps, IPopoverState
                 // lost focus (e.g. due to switching tabs).
                 return;
             }
-            this.handleMouseEnter((e as unknown) as React.MouseEvent<HTMLElement>);
+            this.handleMouseEnter(e as unknown as React.MouseEvent<HTMLElement>);
         }
         this.props.targetProps?.onFocus?.(e);
     };
@@ -490,7 +489,7 @@ export class Popover extends AbstractPureComponent2<IPopoverProps, IPopoverState
             // it won't be set. So, we filter those out here and assume that a click handler somewhere else will
             // close the popover if necessary.
             if (e.relatedTarget != null && !this.isElementInPopover(e.relatedTarget as HTMLElement)) {
-                this.handleMouseLeave((e as unknown) as React.MouseEvent<HTMLElement>);
+                this.handleMouseLeave(e as unknown as React.MouseEvent<HTMLElement>);
             }
         }
         this.lostFocusOnSamePage = e.relatedTarget != null;

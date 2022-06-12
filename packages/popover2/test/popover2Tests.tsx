@@ -22,9 +22,10 @@ import * as sinon from "sinon";
 import { Classes as CoreClasses, Keys, Menu, MenuItem, Overlay, Portal } from "@blueprintjs/core";
 import { dispatchMouseEvent } from "@blueprintjs/test-commons";
 
-import { Errors, Classes } from "../src";
+import { Classes, Errors } from "../src";
 import { IPopover2Props, IPopover2State, Popover2, Popover2InteractionKind } from "../src/popover2";
 import { Popover2Arrow } from "../src/popover2Arrow";
+import { PopupKind } from "../src/popupKind";
 import { Tooltip2 } from "../src/tooltip2";
 
 describe("<Popover2>", () => {
@@ -191,6 +192,16 @@ describe("<Popover2>", () => {
         it("renders with aria-haspopup attr", () => {
             wrapper = renderPopover({ isOpen: true });
             assert.isTrue(wrapper.find("[aria-haspopup='true']").exists());
+        });
+
+        it("sets aria-haspopup attr base on popupKind", () => {
+            wrapper = renderPopover({ isOpen: true, popupKind: PopupKind.DIALOG });
+            assert.isTrue(wrapper.find("[aria-haspopup='dialog']").exists());
+        });
+
+        it("renders without aria-haspopup attr for hover interaction", () => {
+            wrapper = renderPopover({ isOpen: true, interactionKind: Popover2InteractionKind.HOVER_TARGET_ONLY });
+            assert.isFalse(wrapper.find("[aria-haspopup]").exists());
         });
     });
 
@@ -642,6 +653,18 @@ describe("<Popover2>", () => {
             wrapper = renderPopover({ minimal: true, isOpen: true });
             assert.lengthOf(wrapper.find(Popover2Arrow), 0);
         });
+
+        it("matches target width via custom modifier", () => {
+            wrapper = renderPopover({ matchTargetWidth: true, isOpen: true, placement: "bottom" });
+            const targetElement = wrapper.find("[data-testid='target-button']").getDOMNode();
+            const popoverElement = wrapper.find(`.${Classes.POPOVER2}`).getDOMNode();
+            assert.closeTo(
+                popoverElement.clientWidth,
+                targetElement.clientWidth,
+                5,
+                "content width should equal target width +/- 5px",
+            );
+        });
     });
 
     describe("closing on click", () => {
@@ -752,7 +775,7 @@ describe("<Popover2>", () => {
         });
     });
 
-    // these tests can be removed once Popover2 is merged into core in v4.0
+    // these tests can be removed once Popover2 is merged into core in v5.0
     describe("compatibility", () => {
         it("MenuItem from core package is able to dismiss open Popover2", () => {
             wrapper = renderPopover(

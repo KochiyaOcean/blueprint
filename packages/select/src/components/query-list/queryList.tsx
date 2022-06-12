@@ -16,7 +16,7 @@
 
 import * as React from "react";
 
-import { AbstractComponent2, DISPLAYNAME_PREFIX, Props, Keys, Menu, Utils } from "@blueprintjs/core";
+import { AbstractComponent2, DISPLAYNAME_PREFIX, Keys, Menu, Props, Utils } from "@blueprintjs/core";
 
 import {
     executeItemsEqual,
@@ -39,6 +39,11 @@ export interface IQueryListProps<T> extends IListItemsProps<T> {
      * not activeItem.
      */
     initialActiveItem?: T;
+
+    /**
+     * Additional props to apply to the `Menu` that is created within the `QueryList`
+     */
+    menuProps?: React.HTMLAttributes<HTMLUListElement>;
 
     /**
      * Callback invoked when user presses a key, after processing `QueryList`'s own key events
@@ -343,7 +348,7 @@ export class QueryList<T> extends AbstractComponent2<QueryListProps<T>, IQueryLi
 
     /** default `itemListRenderer` implementation */
     private renderItemList = (listProps: IItemListRendererProps<T>) => {
-        const { initialContent, noResults } = this.props;
+        const { initialContent, noResults, menuProps } = this.props;
 
         // omit noResults if createNewItemFromQuery and createNewItemRenderer are both supplied, and query is not empty
         const createItemView = listProps.renderCreateItem();
@@ -354,7 +359,7 @@ export class QueryList<T> extends AbstractComponent2<QueryListProps<T>, IQueryLi
         }
         const createFirst = this.isCreateItemFirst();
         return (
-            <Menu ulRef={listProps.itemsParentRef}>
+            <Menu role="listbox" {...menuProps} ulRef={listProps.itemsParentRef}>
                 {createFirst && createItemView}
                 {menuContent}
                 {!createFirst && createItemView}
@@ -374,6 +379,7 @@ export class QueryList<T> extends AbstractComponent2<QueryListProps<T>, IQueryLi
             };
             return this.props.itemRenderer(item, {
                 handleClick: e => this.handleItemSelect(item, e),
+                handleFocus: () => this.setActiveItem(item),
                 index,
                 modifiers,
                 query,

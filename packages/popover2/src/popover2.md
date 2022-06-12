@@ -7,7 +7,7 @@ Migrating from [Popover](#core/components/popover)?
 
 </h4>
 
-Popover2 is a replacement for Popover and will become the standard Popover API in Blueprint core v4.
+Popover2 is a replacement for Popover and will become the standard Popover API in Blueprint core v5.
 You are encouraged to use this new API now to ease the transition to the next major version of Blueprint.
 See the full [migration guide](https://github.com/palantir/blueprint/wiki/Popover2-migration) on the wiki.
 
@@ -123,7 +123,7 @@ each consist of two attributes:
 These two attributes can be expressed with a single value having the following structure:
 
 <pre class="docs-popover-placement-value-code-block">
-    <span class="docs-popover-placement-label-side">[SIDE]</span>_<span class="docs-popover-placement-label-alignment">[ALIGNMENT]</span>
+    <span class="docs-popover-placement-label-side">[SIDE]</span>-<span class="docs-popover-placement-label-alignment">[ALIGNMENT]</span>
 </pre>
 
 @reactExample Popover2PlacementExample
@@ -152,12 +152,15 @@ automatically by enabling the modifiers `flip` and `preventOverflow`.
 
 @### Modifiers
 
-Modifiers allow you customize Popper.js's positioning behavior. `Popover2` configures several of Popper.js's built-in modifiers
+Modifiers allow us to customize Popper.js's positioning behavior. `Popover2` configures several of Popper.js's built-in modifiers
 to handle things such as flipping, preventing overflow from a boundary element, and positioning the arrow.
 
-You may override these default modifiers with the `modifiers` prop, which is an object with key-value pairs representing the
+You may override the default modifiers with the `modifiers` prop, which is an object with key-value pairs representing the
 modifier name and its options object, respectively. See the [Popper.js modifiers docs page](https://popper.js.org/docs/v2/modifiers/)
-for more info. It is not currently possible to add your own custom modifiers through `Popover2`.
+for more info.
+
+You may also add custom modifiers using the `modifiersCustom` prop. See the
+[Popper.js custom modifiers documentation](https://popper.js.org/docs/v2/modifiers/#custom-modifiers) for more info.
 
 @### Controlled mode
 

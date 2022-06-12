@@ -16,7 +16,7 @@
 
 import * as React from "react";
 
-import { Classes, Menu, MenuItem } from "@blueprintjs/core";
+import { Menu, MenuItem } from "@blueprintjs/core";
 
 import { DATERANGEPICKER_SHORTCUTS } from "./common/classes";
 import { DateRange } from "./common/dateRange";
@@ -95,16 +95,16 @@ export class Shortcuts extends React.PureComponent<IShortcutsProps> {
         const shortcutElements = shortcuts.map((shortcut, index) => (
             <MenuItem
                 active={this.props.selectedShortcutIndex === index}
-                className={Classes.POPOVER_DISMISS_OVERRIDE}
                 disabled={!this.isShortcutInRange(shortcut.dateRange)}
                 key={index}
                 onClick={this.getShorcutClickHandler(shortcut, index)}
+                shouldDismissPopover={false}
                 text={shortcut.label}
             />
         ));
 
         return (
-            <Menu className={DATERANGEPICKER_SHORTCUTS} tabIndex={0}>
+            <Menu aria-label="Date picker shortcuts" className={DATERANGEPICKER_SHORTCUTS} tabIndex={0}>
                 {shortcutElements}
             </Menu>
         );

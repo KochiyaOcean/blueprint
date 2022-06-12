@@ -16,7 +16,6 @@
 
 import * as React from "react";
 import { CaptionElementProps } from "react-day-picker";
-import { polyfill } from "react-lifecycles-compat";
 
 import { AbstractPureComponent2, Divider, HTMLSelect, IconSize, OptionProps } from "@blueprintjs/core";
 
@@ -38,7 +37,6 @@ export interface IDatePickerCaptionState {
     monthRightOffset: number;
 }
 
-@polyfill
 export class DatePickerCaption extends AbstractPureComponent2<IDatePickerCaptionProps, IDatePickerCaptionState> {
     public state: IDatePickerCaptionState = { monthRightOffset: 0 };
 
@@ -77,6 +75,7 @@ export class DatePickerCaption extends AbstractPureComponent2<IDatePickerCaption
 
         const monthSelect = (
             <HTMLSelect
+                aria-label="Month"
                 iconProps={{ style: { right: this.state.monthRightOffset } }}
                 className={Classes.DATEPICKER_MONTH_SELECT}
                 key="month"
@@ -88,6 +87,7 @@ export class DatePickerCaption extends AbstractPureComponent2<IDatePickerCaption
         );
         const yearSelect = (
             <HTMLSelect
+                aria-label="Year"
                 className={Classes.DATEPICKER_YEAR_SELECT}
                 key="year"
                 minimal={true}

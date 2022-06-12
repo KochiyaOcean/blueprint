@@ -32,7 +32,10 @@ export const POPOVER2_CONTENT_PLACEMENT = `${POPOVER2}-placement`;
 export const POPOVER2_CONTENT_SIZING = `${POPOVER2_CONTENT}-sizing`;
 export const POPOVER2_DISMISS = `${POPOVER2}-dismiss`;
 export const POPOVER2_DISMISS_OVERRIDE = `${POPOVER2_DISMISS}-override`;
+export const POPOVER2_MATCH_TARGET_WIDTH = `${POPOVER2}-match-target-width`;
 export const POPOVER2_OPEN = `${POPOVER2}-open`;
+export const POPOVER2_POPPER_ESCAPED = `${POPOVER2}-popper-escaped`;
+export const POPOVER2_REFERENCE_HIDDEN = `${POPOVER2}-reference-hidden`;
 export const POPOVER2_TARGET = `${POPOVER2}-target`;
 export const POPOVER2_TRANSITION_CONTAINER = `${POPOVER2}-transition-container`;
 

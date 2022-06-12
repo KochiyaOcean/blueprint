@@ -16,21 +16,22 @@
 
 import type { Props } from "@blueprintjs/core";
 
+import type { CellRenderer } from "./cell/cell";
 import type { IColumnProps } from "./column";
-import type { IFocusedCellCoordinates } from "./common/cell";
-import type { IColumnIndices, IRowIndices } from "./common/grid";
+import type { FocusedCellCoordinates } from "./common/cellTypes";
+import type { ColumnIndices, RowIndices } from "./common/grid";
 import type { RenderMode } from "./common/renderMode";
 import type { IColumnWidths } from "./headers/columnHeader";
-import type { RowHeaderRenderer, IRowHeights } from "./headers/rowHeader";
+import type { IRowHeights, RowHeaderRenderer } from "./headers/rowHeader";
 import type { IContextMenuRenderer } from "./interactions/menus";
 import type { IIndexedResizeCallback } from "./interactions/resizable";
 import type { ISelectedRegionTransform } from "./interactions/selectable";
-import type { Region, StyledRegionGroup, RegionCardinality, TableLoadingOption } from "./regions";
+import type { Region, RegionCardinality, StyledRegionGroup, TableLoadingOption } from "./regions";
 
 // eslint-disable-next-line deprecation/deprecation
 export type TableProps = ITableProps;
 /** @deprecated use TableProps */
-export interface ITableProps extends Props, IRowHeights, IColumnWidths {
+export interface ITableProps extends Props, Partial<IRowHeights>, Partial<IColumnWidths> {
     /**
      * The children of a `Table` component, which must be React elements
      * that use `IColumnProps`.
@@ -128,7 +129,7 @@ export interface ITableProps extends Props, IRowHeights, IColumnWidths {
      * the focused cell to controlled mode, meaning you are in charge of
      * setting the focus in response to events in the `onFocusedCell` callback.
      */
-    focusedCell?: IFocusedCellCoordinates;
+    focusedCell?: FocusedCellCoordinates;
 
     /**
      * If `true`, selection state changes will cause the component to re-render.
@@ -143,9 +144,14 @@ export interface ITableProps extends Props, IRowHeights, IColumnWidths {
      * attempts to copy a selection via `mod+c`. The returned data will be copied
      * to the clipboard and need not match the display value of the `<Cell>`.
      * The data will be invisibly added as `textContent` into the DOM before
-     * copying. If not defined, keyboard copying via `mod+c` will be disabled.
+     * copying. If not defined, a default implementation will be used that
+     * turns the rendered cell elements into strings using 'react-innertext'.
+     *
+     * @param row the row index coordinate of the cell to get data for
+     * @param col the col index coordinate of the cell to get data for
+     * @param cellRenderer the cell renderer for this row, col coordinate in the table
      */
-    getCellClipboardData?: (row: number, col: number) => any;
+    getCellClipboardData?: (row: number, col: number, celRenderer: CellRenderer) => any;
 
     /**
      * A list of `TableLoadingOption`. Set this prop to specify whether to
@@ -207,7 +213,7 @@ export interface ITableProps extends Props, IRowHeights, IColumnWidths {
     /**
      * A callback called when the focus is changed in the table.
      */
-    onFocusedCell?: (focusedCell: IFocusedCellCoordinates) => void;
+    onFocusedCell?: (focusedCell: FocusedCellCoordinates) => void;
 
     /**
      * If resizing is enabled, this callback will be invoked when the user
@@ -229,7 +235,7 @@ export interface ITableProps extends Props, IRowHeights, IColumnWidths {
     /**
      * A callback called when the visible cell indices change in the table.
      */
-    onVisibleCellsChange?: (rowIndices: IRowIndices, columnIndices: IColumnIndices) => void;
+    onVisibleCellsChange?: (rowIndices: RowIndices, columnIndices: ColumnIndices) => void;
 
     /**
      * Dictates how cells should be rendered. Supported modes are:
@@ -306,4 +312,39 @@ export interface ITableProps extends Props, IRowHeights, IColumnWidths {
      * marked with their own `className` for custom styling.
      */
     styledRegionGroups?: StyledRegionGroup[];
+
+    /**
+     * If `false`, hides the column headers.
+     *
+     * @default true
+     */
+    enableColumnHeader?: boolean;
 }
+
+export type TablePropsDefaults = Required<
+    Pick<
+        TableProps,
+        | "defaultColumnWidth"
+        | "defaultRowHeight"
+        | "enableColumnInteractionBar"
+        | "enableFocusedCell"
+        | "enableGhostCells"
+        | "enableMultipleSelection"
+        | "enableRowHeader"
+        | "forceRerenderOnSelectionChange"
+        | "getCellClipboardData"
+        | "loadingOptions"
+        | "maxColumnWidth"
+        | "maxRowHeight"
+        | "minColumnWidth"
+        | "minRowHeight"
+        | "numFrozenColumns"
+        | "numFrozenRows"
+        | "numRows"
+        | "renderMode"
+        | "rowHeaderCellRenderer"
+        | "selectionModes"
+        | "enableColumnHeader"
+    >
+>;
+export type TablePropsWithDefaults = Omit<TableProps, keyof TablePropsDefaults> & TablePropsDefaults;

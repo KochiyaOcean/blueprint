@@ -115,6 +115,7 @@ describe("Utils", () => {
     });
 
     describe("arrayOfLength", () => {
+        /* eslint-disable deprecation/deprecation */
         it("truncates if too long", () => {
             const original = Utils.times(5, () => "A");
             const result = Utils.arrayOfLength(original, 2, "B");
@@ -139,13 +140,13 @@ describe("Utils", () => {
             expect(result).to.have.lengthOf(5);
             expect(result).to.deep.equal(["A", "A", "A", "A", "A"]);
         });
+        /* eslint-enable deprecation/deprecation */
     });
 
     describe("assignSparseValues", () => {
-        it("checks null and array length", () => {
+        it("compares array lengths", () => {
             const defaults = Utils.times(3, () => "A");
 
-            expect(Utils.assignSparseValues(defaults, null)).to.equal(defaults);
             expect(Utils.assignSparseValues(defaults, ["B"])).to.equal(defaults);
         });
 
@@ -246,11 +247,11 @@ describe("Utils", () => {
         const RIGHT_BUTTON_CODE = 1;
 
         it("returns true for left click", () => {
-            expect(Utils.isLeftClick(({ button: LEFT_BUTTON_CODE } as any) as MouseEvent)).to.be.true;
+            expect(Utils.isLeftClick({ button: LEFT_BUTTON_CODE } as any as MouseEvent)).to.be.true;
         });
 
         it("returns false for right click", () => {
-            expect(Utils.isLeftClick(({ button: RIGHT_BUTTON_CODE } as any) as MouseEvent)).to.be.false;
+            expect(Utils.isLeftClick({ button: RIGHT_BUTTON_CODE } as any as MouseEvent)).to.be.false;
         });
     });
 
@@ -327,9 +328,10 @@ describe("Utils", () => {
             });
         });
 
-        function assertArraysEqual(result: string[], expected: string) {
+        function assertArraysEqual(result: string[] | undefined, expected: string) {
+            expect(result).not.to.be.undefined;
             // use .eql to deeply compare arrays
-            expect(result).to.eql(expected.split(""));
+            expect(result!).to.eql(expected.split(""));
         }
     });
 });

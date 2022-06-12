@@ -17,7 +17,6 @@
 import classNames from "classnames";
 import * as React from "react";
 import DayPicker, { CaptionElementProps, DayModifiers, NavbarElementProps } from "react-day-picker";
-import { polyfill } from "react-lifecycles-compat";
 
 import { AbstractPureComponent2, Button, DISPLAYNAME_PREFIX, Divider, Props } from "@blueprintjs/core";
 
@@ -36,6 +35,7 @@ export type DatePickerProps = IDatePickerProps;
 export interface IDatePickerProps extends IDatePickerBaseProps, Props {
     /**
      * Allows the user to clear the selection by clicking the currently selected day.
+     * If disabled, the "Clear" Button in the Actions Bar will also be disabled.
      *
      * @default true
      */
@@ -110,7 +110,6 @@ export interface IDatePickerState {
     selectedShortcutIndex?: number;
 }
 
-@polyfill
 export class DatePicker extends AbstractPureComponent2<DatePickerProps, IDatePickerState> {
     public static defaultProps: DatePickerProps = {
         canClearSelection: true,
@@ -144,13 +143,14 @@ export class DatePicker extends AbstractPureComponent2<DatePickerProps, IDatePic
     }
 
     public render() {
-        const { className, dayPickerProps, locale, localeUtils, maxDate, minDate, showActionsBar } = this.props;
+        const { className, dayPickerProps, footerElement, locale, localeUtils, maxDate, minDate, showActionsBar } =
+            this.props;
         const { displayMonth, displayYear } = this.state;
 
         return (
             <div className={classNames(Classes.DATEPICKER, className)}>
                 {this.maybeRenderShortcuts()}
-                <div>
+                <div className={Classes.DATEPICKER_CONTENT}>
                     <DayPicker
                         showOutsideDays={true}
                         locale={locale}
@@ -171,6 +171,7 @@ export class DatePicker extends AbstractPureComponent2<DatePickerProps, IDatePic
                     />
                     {this.maybeRenderTimePicker()}
                     {showActionsBar && this.renderOptionsBar()}
+                    {footerElement}
                 </div>
             </div>
         );
@@ -264,12 +265,23 @@ export class DatePicker extends AbstractPureComponent2<DatePickerProps, IDatePic
     );
 
     private renderOptionsBar() {
-        const { clearButtonText, todayButtonText } = this.props;
+        const { clearButtonText, todayButtonText, minDate, maxDate, canClearSelection } = this.props;
+        const todayEnabled = isTodayEnabled(minDate, maxDate);
         return [
             <Divider key="div" />,
             <div className={Classes.DATEPICKER_FOOTER} key="footer">
-                <Button minimal={true} onClick={this.handleTodayClick} text={todayButtonText} />
-                <Button minimal={true} onClick={this.handleClearClick} text={clearButtonText} />
+                <Button
+                    minimal={true}
+                    disabled={!todayEnabled}
+                    onClick={this.handleTodayClick}
+                    text={todayButtonText}
+                />
+                <Button
+                    disabled={!canClearSelection}
+                    minimal={true}
+                    onClick={this.handleClearClick}
+                    text={clearButtonText}
+                />
             </div>,
         ];
     }
@@ -459,4 +471,9 @@ function getInitialMonth(props: DatePickerProps, value: Date | null): Date {
     } else {
         return DateUtils.getDateBetween([props.minDate, props.maxDate]);
     }
+}
+
+function isTodayEnabled(minDate: Date, maxDate: Date): boolean {
+    const today = new Date();
+    return DateUtils.isDayInRange(today, [minDate, maxDate]);
 }

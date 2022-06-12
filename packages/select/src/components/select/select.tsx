@@ -21,8 +21,8 @@ import {
     AbstractPureComponent2,
     Button,
     DISPLAYNAME_PREFIX,
-    InputGroupProps2,
     InputGroup,
+    InputGroupProps2,
     IPopoverProps,
     IRef,
     Keys,
@@ -39,6 +39,8 @@ import { IQueryListRendererProps, QueryList } from "../query-list/queryList";
 export type SelectProps<T> = ISelectProps<T>;
 /** @deprecated use SelectProps */
 export interface ISelectProps<T> extends IListItemsProps<T> {
+    children?: React.ReactNode;
+
     /**
      * Whether the component should take up the full width of its container.
      * This overrides `popoverProps.fill`. You also have to ensure that the child
@@ -97,10 +99,12 @@ export interface ISelectState {
     isOpen: boolean;
 }
 
+/** @deprecated use { Select2 } from "@blueprintjs/select" */
 export class Select<T> extends AbstractPureComponent2<SelectProps<T>, ISelectState> {
     public static displayName = `${DISPLAYNAME_PREFIX}.Select`;
 
     public static ofType<U>() {
+        // eslint-disable-next-line deprecation/deprecation
         return Select as new (props: SelectProps<U>) => Select<U>;
     }
 
@@ -123,6 +127,7 @@ export class Select<T> extends AbstractPureComponent2<SelectProps<T>, ISelectSta
         const { filterable, inputProps, popoverProps, ...restProps } = this.props;
 
         return (
+            /* eslint-disable-next-line deprecation/deprecation */
             <this.TypedQueryList
                 {...restProps}
                 onItemSelect={this.handleItemSelect}
@@ -278,6 +283,7 @@ export class Select<T> extends AbstractPureComponent2<SelectProps<T>, ISelectSta
     private handlePopoverClosing = (node: HTMLElement) => {
         // restore focus to saved element.
         // timeout allows popover to begin closing and remove focus handlers beforehand.
+        /* istanbul ignore next */
         this.requestAnimationFrame(() => {
             if (this.previousFocusedElement !== undefined) {
                 this.previousFocusedElement.focus();

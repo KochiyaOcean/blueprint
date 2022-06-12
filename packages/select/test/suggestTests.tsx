@@ -23,7 +23,7 @@ import { InputGroup, IPopoverProps, Keys, MenuItem, Popover } from "@blueprintjs
 
 import { IFilm, renderFilm, TOP_100_FILMS } from "../../docs-app/src/common/films";
 import { IItemRendererProps, QueryList } from "../src";
-import { ISuggestProps, ISuggestState, Suggest } from "../src/components/select/suggest";
+import { ISuggestProps, ISuggestState, Suggest } from "../src/components/suggest/suggest";
 import { selectComponentSuite } from "./selectComponentSuite";
 
 describe("Suggest", () => {
@@ -93,7 +93,7 @@ describe("Suggest", () => {
 
         it("scrolls active item into view when popover opens", () => {
             const wrapper = suggest();
-            const queryList = ((wrapper.instance() as Suggest<IFilm>) as any).queryList; // private ref
+            const queryList = (wrapper.instance() as Suggest<IFilm> as any).queryList; // private ref
             const scrollActiveItemIntoViewSpy = sinon.spy(queryList, "scrollActiveItemIntoView");
             wrapper.setState({ isOpen: false });
             assert.isFalse(scrollActiveItemIntoViewSpy.called);
@@ -107,7 +107,7 @@ describe("Suggest", () => {
                 popoverProps: { transitionDuration: 5 },
                 selectedItem: TOP_100_FILMS[10],
             });
-            const queryList = ((wrapper.instance() as Suggest<IFilm>) as any).queryList as QueryList<IFilm>; // private ref
+            const queryList = (wrapper.instance() as Suggest<IFilm> as any).queryList as QueryList<IFilm>; // private ref
 
             assert.deepEqual(
                 queryList.state.activeItem,

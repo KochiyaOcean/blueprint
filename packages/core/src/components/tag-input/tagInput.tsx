@@ -16,12 +16,11 @@
 
 import classNames from "classnames";
 import * as React from "react";
-import { polyfill } from "react-lifecycles-compat";
 
 import { AbstractPureComponent2, Classes, IRef, Keys, refHandler, setRef, Utils } from "../../common";
-import { DISPLAYNAME_PREFIX, HTMLInputProps, IntentProps, Props, MaybeElement } from "../../common/props";
+import { DISPLAYNAME_PREFIX, HTMLInputProps, IntentProps, MaybeElement, Props } from "../../common/props";
 import { Icon, IconName, IconSize } from "../icon/icon";
-import { TagProps, Tag } from "../tag/tag";
+import { Tag, TagProps } from "../tag/tag";
 
 /**
  * The method in which a `TagInput` value was added.
@@ -57,6 +56,8 @@ export interface ITagInputProps extends IntentProps, Props {
      * @default true
      */
     addOnPaste?: boolean;
+
+    children?: React.ReactNode;
 
     /**
      * Whether the component is non-interactive.
@@ -176,12 +177,8 @@ export interface ITagInputProps extends IntentProps, Props {
      * Controlled tag values. Each value will be rendered inside a `Tag`, which can be customized
      * using `tagProps`. Therefore, any valid React node can be used as a `TagInput` value; falsy
      * values will not be rendered.
-     *
-     * __Note about typed usage:__ If you know your `values` will always be of a certain `ReactNode`
-     * subtype, such as `string` or `ReactChild`, you can use that type on all your handlers
-     * to simplify type logic.
      */
-    values: React.ReactNode[];
+    values: readonly React.ReactNode[];
 }
 
 export interface ITagInputState {
@@ -194,7 +191,6 @@ export interface ITagInputState {
 /** special value for absence of active tag */
 const NONE = -1;
 
-@polyfill
 export class TagInput extends AbstractPureComponent2<TagInputProps, ITagInputState> {
     public static displayName = `${DISPLAYNAME_PREFIX}.TagInput`;
 
@@ -467,9 +463,7 @@ export class TagInput extends AbstractPureComponent2<TagInputProps, ITagInputSta
     private removeIndexFromValues(index: number) {
         const { onChange, onRemove, values } = this.props;
         onRemove?.(values[index], index);
-        if (Utils.isFunction(onChange)) {
-            onChange(values.filter((_, i) => i !== index));
-        }
+        onChange?.(values.filter((_, i) => i !== index));
     }
 
     private invokeKeyPressCallback(

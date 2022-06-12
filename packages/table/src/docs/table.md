@@ -9,15 +9,21 @@ If you are looking instead for the Blueprint-styled HTML `<table>`, see
 </div>
 
 Make sure to review the [getting started docs for installation info](#blueprint/getting-started).
-Do not forget to include `table.css` on your page.
 
 ```sh
 npm install --save @blueprintjs/table
 ```
 
+Do not forget to include `table.css` on your page:
+
+```scss
+@import "~@blueprintjs/table/lib/css/table.css";
+```
+
 <div class="@ns-callout @ns-large @ns-intent-success @ns-icon-star">
 
-There is a new version of the table component compatible with the new hotkeys API, see [Table2](#table/table2).
+There is an updated version of the table component with some new features and compatibility with the
+[new hotkeys API](#core/components/hotkeys-target2): see [Table2](#table/table2).
 </div>
 
 ### Features

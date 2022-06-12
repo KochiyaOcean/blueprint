@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-import { Boundary, Placement, placements, RootBoundary, StrictModifiers } from "@popperjs/core";
+import { Boundary, Modifier, Placement, placements, RootBoundary, StrictModifiers } from "@popperjs/core";
+import * as React from "react";
 import { StrictModifier } from "react-popper";
 
-import { OverlayableProps, Props, PopoverPosition } from "@blueprintjs/core";
+import { IRef, OverlayableProps, PopoverPosition, Props } from "@blueprintjs/core";
 
 export { Boundary as PopperBoundary, Placement, placements as PlacementOptions };
 // copied from @popperjs/core, where it is not exported as public
@@ -29,6 +30,7 @@ export type Popover2TargetProps = IPopover2TargetProps;
  * @deprecated use Popover2TargetProps
  */
 export interface IPopover2TargetProps {
+    /** Target ref. */
     ref: React.Ref<any>;
 
     /** Whether the popover or tooltip is currently open. */
@@ -45,6 +47,9 @@ export type Popover2SharedProps<T> = IPopover2SharedProps<T>;
  * @deprecated use Popover2SharedProps
  */
 export interface IPopover2SharedProps<TProps> extends OverlayableProps, Props {
+    /** Interactive element which will trigger the popover. */
+    children?: React.ReactNode;
+
     /**
      * A boundary element supplied to the "flip" and "preventOverflow" modifiers.
      * This is a shorthand for overriding Popper.js modifier options with the `modifiers` prop.
@@ -120,6 +125,15 @@ export interface IPopover2SharedProps<TProps> extends OverlayableProps, Props {
     isOpen?: boolean;
 
     /**
+     * Whether the popover content should be sized to match the width of the target.
+     * This is sometimes useful for dropdown menus. This prop is implemented using
+     * a Popper.js custom modifier.
+     *
+     * @default false
+     */
+    matchTargetWidth?: boolean;
+
+    /**
      * Whether to apply minimal styling to this popover or tooltip. Minimal popovers
      * do not have an arrow pointing to their target and use a subtler animation.
      *
@@ -139,11 +153,16 @@ export interface IPopover2SharedProps<TProps> extends OverlayableProps, Props {
      *
      * @see https://popper.js.org/docs/v2/modifiers/
      */
-    modifiers?: Partial<
-        {
-            [M in StrictModifierNames]: Partial<Omit<StrictModifier<M>, "name">>;
-        }
-    >;
+    modifiers?: Partial<{
+        [M in StrictModifierNames]: Partial<Omit<StrictModifier<M>, "name">>;
+    }>;
+
+    /**
+     * Custom modifiers to add to the popper instance.
+     *
+     * @see https://popper.js.org/docs/v2/modifiers/#custom-modifiers
+     */
+    modifiersCustom?: ReadonlyArray<Partial<Modifier<any, object>>>;
 
     /**
      * Callback invoked in controlled mode when the popover open state *would*
@@ -164,10 +183,15 @@ export interface IPopover2SharedProps<TProps> extends OverlayableProps, Props {
     openOnTargetFocus?: boolean;
 
     /**
+     * Ref supplied to the `Classes.POPOVER` element.
+     */
+    popoverRef?: IRef<HTMLElement>;
+
+    /**
      * Target renderer which receives props injected by Popover2 which should be spread onto
      * the rendered element. This function should return a single React node.
      *
-     * Mutually exclusive with children, targetClassName, and targetTagName.
+     * Mutually exclusive with `children` and `targetTagName` props.
      */
     renderTarget?: (props: Popover2TargetProps & TProps) => JSX.Element;
 

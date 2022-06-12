@@ -16,10 +16,9 @@
 
 import classNames from "classnames";
 import * as React from "react";
-import { polyfill } from "react-lifecycles-compat";
 
 import { AbstractPureComponent2, Classes } from "../../common";
-import { DISPLAYNAME_PREFIX, ActionProps, IntentProps, LinkProps, Props, MaybeElement } from "../../common/props";
+import { ActionProps, DISPLAYNAME_PREFIX, IntentProps, LinkProps, MaybeElement, Props } from "../../common/props";
 import { ButtonGroup } from "../button/buttonGroup";
 import { AnchorButton, Button } from "../button/buttons";
 import { Icon, IconName } from "../icon/icon";
@@ -55,7 +54,6 @@ export interface IToastProps extends Props, IntentProps {
     timeout?: number;
 }
 
-@polyfill
 export class Toast extends AbstractPureComponent2<IToastProps> {
     public static defaultProps: IToastProps = {
         className: "",
@@ -77,7 +75,9 @@ export class Toast extends AbstractPureComponent2<IToastProps> {
                 tabIndex={0}
             >
                 <Icon icon={icon} />
-                <span className={Classes.TOAST_MESSAGE}>{message}</span>
+                <span className={Classes.TOAST_MESSAGE} role="alert">
+                    {message}
+                </span>
                 <ButtonGroup minimal={true}>
                     {this.maybeRenderActionButton()}
                     <Button aria-label="Close" icon="cross" onClick={this.handleCloseClick} />

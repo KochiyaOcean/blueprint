@@ -15,20 +15,21 @@
 
 import classNames from "classnames";
 import * as React from "react";
+import innerText from "react-innertext";
 
 import {
     AbstractComponent2,
+    Utils as CoreUtils,
     DISPLAYNAME_PREFIX,
     HotkeyConfig,
     HotkeysTarget2,
     IRef,
     UseHotkeysReturnValue,
-    Utils as CoreUtils,
 } from "@blueprintjs/core";
 
-import { ICellProps } from "./cell/cell";
-import { Column, IColumnProps } from "./column";
-import { IFocusedCellCoordinates } from "./common/cell";
+import { CellRenderer } from "./cell/cell";
+import { Column, ColumnProps } from "./column";
+import type { FocusedCellCoordinates } from "./common/cellTypes";
 import * as Classes from "./common/classes";
 import { columnInteractionBarContextTypes, IColumnInteractionBarContextTypes } from "./common/context";
 import * as Errors from "./common/errors";
@@ -43,7 +44,7 @@ import { ColumnHeaderCell, IColumnHeaderCellProps } from "./headers/columnHeader
 import { renderDefaultRowHeader, RowHeader } from "./headers/rowHeader";
 import { ResizeSensor } from "./interactions/resizeSensor";
 import { GuideLayer } from "./layers/guides";
-import { RegionStyler, RegionLayer } from "./layers/regions";
+import { RegionLayer, RegionStyler } from "./layers/regions";
 import { Locator } from "./locator";
 import { QuadrantType } from "./quadrants/tableQuadrant";
 import { TableQuadrantStack } from "./quadrants/tableQuadrantStack";
@@ -53,25 +54,40 @@ import {
     resizeRowsByApproximateHeight,
     resizeRowsByTallestCell,
 } from "./resizeRows";
-import { getHotkeysFromProps, isSelectionModeEnabled } from "./table2Utils";
+import { compareChildren, getHotkeysFromProps, isSelectionModeEnabled } from "./table2Utils";
 import { TableBody } from "./tableBody";
 import { TableHotkeys } from "./tableHotkeys";
-import type { TableProps } from "./tableProps";
-import type { TableState, TableSnapshot } from "./tableState";
+import type { TableProps, TablePropsDefaults, TablePropsWithDefaults } from "./tableProps";
+import type { TableSnapshot, TableState } from "./tableState";
 import { clampNumFrozenColumns, clampNumFrozenRows, hasLoadingOption } from "./tableUtils";
 
-export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnapshot> {
+export interface Table2Props extends TableProps {
+    /**
+     * This dependency list may be used to trigger a re-render of all cells when one of its elements changes
+     * (compared using shallow equality checks). This is done by invalidating the grid, which forces
+     * TableQuadrantStack to re-render.
+     */
+    cellRendererDependencies?: React.DependencyList;
+}
+
+export class Table2 extends AbstractComponent2<Table2Props, TableState, TableSnapshot> {
     public static displayName = `${DISPLAYNAME_PREFIX}.Table2`;
 
-    public static defaultProps: TableProps = {
+    public static defaultProps: TablePropsDefaults = {
         defaultColumnWidth: 150,
         defaultRowHeight: 20,
+        enableColumnHeader: true,
+        enableColumnInteractionBar: false,
         enableFocusedCell: false,
         enableGhostCells: false,
         enableMultipleSelection: true,
         enableRowHeader: true,
         forceRerenderOnSelectionChange: false,
+        getCellClipboardData: (row: number, col: number, cellRenderer: CellRenderer) =>
+            innerText(cellRenderer(row, col)),
         loadingOptions: [],
+        maxColumnWidth: 9999,
+        maxRowHeight: 9999,
         minColumnWidth: 50,
         minRowHeight: 20,
         numFrozenColumns: 0,
@@ -82,9 +98,10 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
         selectionModes: SelectionModes.ALL,
     };
 
-    public static childContextTypes: React.ValidationMap<IColumnInteractionBarContextTypes> = columnInteractionBarContextTypes;
+    public static childContextTypes: React.ValidationMap<IColumnInteractionBarContextTypes> =
+        columnInteractionBarContextTypes;
 
-    public static getDerivedStateFromProps(props: TableProps, state: TableState) {
+    public static getDerivedStateFromProps(props: TablePropsWithDefaults, state: TableState) {
         const {
             children,
             defaultColumnWidth,
@@ -105,8 +122,8 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
             rowHeights = state.rowHeights;
         }
 
-        const newChildrenArray = React.Children.toArray(children) as Array<React.ReactElement<IColumnProps>>;
-        const didChildrenChange = newChildrenArray !== state.childrenArray;
+        const newChildrenArray = React.Children.toArray(children) as Array<React.ReactElement<ColumnProps>>;
+        const didChildrenChange = !compareChildren(newChildrenArray, state.childrenArray);
         const numCols = newChildrenArray.length;
 
         let newColumnWidths = columnWidths;
@@ -115,38 +132,38 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
             // column that had the same `ID` prop. If none is found, use the
             // previous width at the same index.
             const previousColumnWidths = newChildrenArray.map(
-                (child: React.ReactElement<IColumnProps>, index: number) => {
-                    const mappedIndex = state.columnIdToIndex[child.props.id];
-                    return state.columnWidths[mappedIndex != null ? mappedIndex : index];
+                (child: React.ReactElement<ColumnProps>, index: number) => {
+                    const mappedIndex =
+                        child.props.id === undefined ? undefined : state.columnIdToIndex[child.props.id];
+                    return state.columnWidths[mappedIndex ?? index];
                 },
             );
 
             // Make sure the width/height arrays have the correct length, but keep
             // as many existing widths/heights as possible. Also, apply the
             // sparse width/heights from props.
-            newColumnWidths = Utils.arrayOfLength(newColumnWidths, numCols, defaultColumnWidth);
+            newColumnWidths = Array(numCols).fill(defaultColumnWidth);
             newColumnWidths = Utils.assignSparseValues(newColumnWidths, previousColumnWidths);
             newColumnWidths = Utils.assignSparseValues(newColumnWidths, columnWidths);
         }
 
         let newRowHeights = rowHeights;
         if (rowHeights !== state.rowHeights || numRows !== state.rowHeights.length) {
-            newRowHeights = Utils.arrayOfLength(newRowHeights, numRows, defaultRowHeight);
+            newRowHeights = Array(numRows).fill(defaultRowHeight);
             newRowHeights = Utils.assignSparseValues(newRowHeights, rowHeights);
         }
 
-        let newSelectedRegions = selectedRegions;
-        if (selectedRegions == null) {
-            // if we're in uncontrolled mode, filter out all selected regions that don't
-            // fit in the current new table dimensions
-            newSelectedRegions = state.selectedRegions.filter(region => {
+        const newSelectedRegions =
+            selectedRegions ??
+            state.selectedRegions.filter(region => {
+                // if we're in uncontrolled mode, filter out all selected regions that don't
+                // fit in the current new table dimensions
                 const regionCardinality = Regions.getRegionCardinality(region);
                 return (
                     isSelectionModeEnabled(props, regionCardinality, selectionModes) &&
                     Regions.isRegionValidForTable(region, numRows, numCols)
                 );
             });
-        }
 
         const newFocusedCell = FocusedCellUtils.getInitialFocusedCell(
             enableFocusedCell,
@@ -197,32 +214,50 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
 
     private hotkeysImpl: TableHotkeys;
 
-    public grid: Grid;
+    public grid: Grid | null = null;
 
-    public locator: Locator;
+    public locator?: Locator;
 
-    private resizeSensorDetach: () => void;
+    private resizeSensorDetach?: () => void;
 
     private refHandlers = {
-        cellContainer: (ref: HTMLElement) => (this.cellContainerElement = ref),
-        columnHeader: (ref: HTMLElement) => (this.columnHeaderElement = ref),
+        cellContainer: (ref: HTMLElement | null) => (this.cellContainerElement = ref),
+        columnHeader: (ref: HTMLElement | null) => {
+            this.columnHeaderElement = ref;
+            if (ref != null) {
+                this.columnHeaderHeight = Math.max(ref.clientHeight, Grid.MIN_COLUMN_HEADER_HEIGHT);
+            }
+        },
         quadrantStack: (ref: TableQuadrantStack) => (this.quadrantStackInstance = ref),
-        rootTable: (ref: HTMLElement) => (this.rootTableElement = ref),
-        rowHeader: (ref: HTMLElement) => (this.rowHeaderElement = ref),
-        scrollContainer: (ref: HTMLElement) => (this.scrollContainerElement = ref),
+        rootTable: (ref: HTMLElement | null) => (this.rootTableElement = ref),
+        rowHeader: (ref: HTMLElement | null) => {
+            this.rowHeaderElement = ref;
+            if (ref != null) {
+                this.rowHeaderWidth = ref.clientWidth;
+            }
+        },
+        scrollContainer: (ref: HTMLElement | null) => (this.scrollContainerElement = ref),
     };
 
-    private cellContainerElement: HTMLElement;
+    private cellContainerElement?: HTMLElement | null;
 
-    private columnHeaderElement: HTMLElement;
+    private columnHeaderElement?: HTMLElement | null;
 
-    private quadrantStackInstance: TableQuadrantStack;
+    private columnHeaderHeight = Grid.MIN_COLUMN_HEADER_HEIGHT;
 
-    private rootTableElement: HTMLElement;
+    private quadrantStackInstance?: TableQuadrantStack;
 
-    private rowHeaderElement: HTMLElement;
+    private rootTableElement?: HTMLElement | null;
 
-    private scrollContainerElement: HTMLElement;
+    private rowHeaderElement?: HTMLElement | null;
+
+    private rowHeaderWidth = Grid.MIN_ROW_HEADER_WIDTH;
+
+    private scrollContainerElement?: HTMLElement | null;
+
+    private didColumnHeaderMount = false;
+
+    private didRowHeaderMount = false;
 
     /*
      * This value is set to `true` when all cells finish mounting for the first
@@ -230,23 +265,36 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
      */
     private didCompletelyMount = false;
 
-    public constructor(props: TableProps, context?: any) {
+    public constructor(props: TablePropsWithDefaults, context?: any) {
         super(props, context);
 
-        const { children, columnWidths, defaultRowHeight, defaultColumnWidth, numRows, rowHeights } = this.props;
+        const {
+            children,
+            columnWidths,
+            defaultRowHeight,
+            defaultColumnWidth,
+            enableRowHeader,
+            numRows,
+            rowHeights,
+            selectedRegions = [] as Region[],
+            enableColumnHeader,
+        } = props;
 
-        const childrenArray = React.Children.toArray(children) as Array<React.ReactElement<IColumnProps>>;
+        const childrenArray = React.Children.toArray(children) as Array<React.ReactElement<ColumnProps>>;
         const columnIdToIndex = Table2.createColumnIdIndex(childrenArray);
 
         // Create height/width arrays using the lengths from props and
         // children, the default values from props, and finally any sparse
         // arrays passed into props.
         let newColumnWidths = childrenArray.map(() => defaultColumnWidth);
-        newColumnWidths = Utils.assignSparseValues(newColumnWidths, columnWidths);
+        if (columnWidths !== undefined) {
+            newColumnWidths = Utils.assignSparseValues(newColumnWidths, columnWidths);
+        }
         let newRowHeights = Utils.times(numRows, () => defaultRowHeight);
-        newRowHeights = Utils.assignSparseValues(newRowHeights, rowHeights);
+        if (rowHeights !== undefined) {
+            newRowHeights = Utils.assignSparseValues(newRowHeights, rowHeights);
+        }
 
-        const selectedRegions = props.selectedRegions == null ? ([] as Region[]) : props.selectedRegions;
         const focusedCell = FocusedCellUtils.getInitialFocusedCell(
             props.enableFocusedCell,
             props.focusedCell,
@@ -258,22 +306,33 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
             childrenArray,
             columnIdToIndex,
             columnWidths: newColumnWidths,
+            didHeadersMount: false,
             focusedCell,
+            horizontalGuides: [],
             isLayoutLocked: false,
             isReordering: false,
             numFrozenColumnsClamped: clampNumFrozenColumns(props),
             numFrozenRowsClamped: clampNumFrozenRows(props),
             rowHeights: newRowHeights,
             selectedRegions,
+            verticalGuides: [],
         };
 
-        this.hotkeysImpl = new TableHotkeys(props, this.state, this.grid, {
+        this.hotkeysImpl = new TableHotkeys(props, this.state, {
             getEnabledSelectionHandler: this.getEnabledSelectionHandler,
             handleFocus: this.handleFocus,
             handleSelection: this.handleSelection,
             syncViewportPosition: this.syncViewportPosition,
         });
         this.hotkeys = getHotkeysFromProps(props, this.hotkeysImpl);
+
+        if (enableRowHeader === false) {
+            this.didRowHeaderMount = true;
+        }
+
+        if (enableColumnHeader === false) {
+            this.didColumnHeaderMount = true;
+        }
     }
 
     // Instance methods
@@ -295,7 +354,7 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
         options?: IResizeRowsByApproximateHeightOptions,
     ) {
         const rowHeights = resizeRowsByApproximateHeight(
-            this.props.numRows,
+            this.props.numRows!,
             this.state.columnWidths,
             getCellText,
             options,
@@ -309,6 +368,11 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
      * If no indices are provided, default to using the tallest visible cell from all columns in view.
      */
     public resizeRowsByTallestCell(columnIndices?: number | number[]) {
+        if (this.grid == null || this.state.viewportRect === undefined || this.locator === undefined) {
+            console.warn(Errors.TABLE_UNMOUNTED_RESIZE_WARNING);
+            return;
+        }
+
         const rowHeights = resizeRowsByTallestCell(
             this.grid,
             this.state.viewportRect,
@@ -338,9 +402,17 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
      * corner is reached.
      */
     public scrollToRegion(region: Region) {
-        const { numFrozenColumnsClamped: numFrozenColumns, numFrozenRowsClamped: numFrozenRows } = this.state;
-        const { left: currScrollLeft, top: currScrollTop } = this.state.viewportRect;
+        const {
+            numFrozenColumnsClamped: numFrozenColumns,
+            numFrozenRowsClamped: numFrozenRows,
+            viewportRect,
+        } = this.state;
 
+        if (viewportRect === undefined || this.grid === null || this.quadrantStackInstance === undefined) {
+            return;
+        }
+
+        const { left: currScrollLeft, top: currScrollTop } = viewportRect;
         const { scrollLeft, scrollTop } = ScrollUtils.getScrollPositionForRegion(
             region,
             currScrollLeft,
@@ -363,11 +435,11 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
 
     public getChildContext(): IColumnInteractionBarContextTypes {
         return {
-            enableColumnInteractionBar: this.props.enableColumnInteractionBar,
+            enableColumnInteractionBar: this.props.enableColumnInteractionBar!,
         };
     }
 
-    public shouldComponentUpdate(nextProps: TableProps, nextState: TableState) {
+    public shouldComponentUpdate(nextProps: Table2Props, nextState: TableState) {
         const propKeysDenylist = { exclude: Table2.SHALLOW_COMPARE_PROP_KEYS_DENYLIST };
         const stateKeysDenylist = { exclude: Table2.SHALLOW_COMPARE_STATE_KEYS_DENYLIST };
 
@@ -391,13 +463,15 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
             loadingOptions,
             numRows,
             enableColumnInteractionBar,
+            enableColumnHeader,
         } = this.props;
         const { horizontalGuides, numFrozenColumnsClamped, numFrozenRowsClamped, verticalGuides } = this.state;
         if (!this.gridDimensionsMatchProps()) {
             // Ensure we're rendering the correct number of rows & columns
             this.invalidateGrid();
         }
-        this.validateGrid();
+
+        const grid = this.validateGrid();
 
         const classes = classNames(
             Classes.TABLE_CONTAINER,
@@ -405,7 +479,10 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
                 [Classes.TABLE_REORDERING]: this.state.isReordering,
                 [Classes.TABLE_NO_VERTICAL_SCROLL]: this.shouldDisableVerticalScroll(),
                 [Classes.TABLE_NO_HORIZONTAL_SCROLL]: this.shouldDisableHorizontalScroll(),
-                [Classes.TABLE_SELECTION_ENABLED]: isSelectionModeEnabled(this.props, RegionCardinality.CELLS),
+                [Classes.TABLE_SELECTION_ENABLED]: isSelectionModeEnabled(
+                    this.props as TablePropsWithDefaults,
+                    RegionCardinality.CELLS,
+                ),
                 [Classes.TABLE_NO_ROWS]: numRows === 0,
             },
             className,
@@ -423,11 +500,12 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
                 <TableQuadrantStack
                     bodyRef={this.refHandlers.cellContainer}
                     bodyRenderer={this.renderBody}
-                    columnHeaderCellRenderer={this.renderColumnHeader}
+                    columnHeaderRenderer={this.renderColumnHeader}
                     columnHeaderRef={this.refHandlers.columnHeader}
+                    didHeadersMount={this.state.didHeadersMount}
                     enableColumnInteractionBar={enableColumnInteractionBar}
                     enableRowHeader={enableRowHeader}
-                    grid={this.grid}
+                    grid={grid}
                     handleColumnResizeGuide={this.handleColumnResizeGuide}
                     handleColumnsReordering={this.handleColumnsReordering}
                     handleRowResizeGuide={this.handleRowResizeGuide}
@@ -442,9 +520,10 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
                     onScroll={this.handleBodyScroll}
                     ref={this.refHandlers.quadrantStack}
                     menuRenderer={this.renderMenu}
-                    rowHeaderCellRenderer={this.renderRowHeader}
+                    rowHeaderRenderer={this.renderRowHeader}
                     rowHeaderRef={this.refHandlers.rowHeader}
                     scrollContainerRef={this.refHandlers.scrollContainer}
+                    enableColumnHeader={enableColumnHeader}
                 />
                 <div className={classNames(Classes.TABLE_OVERLAY_LAYER, Classes.TABLE_OVERLAY_REORDERING_CURSOR)} />
                 <GuideLayer
@@ -464,15 +543,17 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
     public componentDidMount() {
         this.validateGrid();
 
-        this.locator = new Locator(this.rootTableElement, this.scrollContainerElement, this.cellContainerElement);
-        this.updateLocator();
-        this.updateViewportRect(this.locator.getViewportRect());
-
-        this.resizeSensorDetach = ResizeSensor.attach(this.rootTableElement, () => {
-            if (!this.state.isLayoutLocked) {
-                this.updateViewportRect(this.locator.getViewportRect());
-            }
-        });
+        if (this.rootTableElement != null && this.scrollContainerElement != null && this.cellContainerElement != null) {
+            this.locator = new Locator(this.rootTableElement, this.scrollContainerElement, this.cellContainerElement);
+            this.updateLocator();
+            this.updateViewportRect(this.locator.getViewportRect());
+            this.resizeSensorDetach = ResizeSensor.attach(this.rootTableElement, () => {
+                if (!this.state.isLayoutLocked) {
+                    this.updateViewportRect(this.locator?.getViewportRect());
+                }
+            });
+            this.forceUpdate();
+        }
     }
 
     public componentWillUnmount() {
@@ -483,42 +564,40 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
         this.didCompletelyMount = false;
     }
 
-    public getSnapshotBeforeUpdate() {
-        const { viewportRect } = this.state;
-
-        this.validateGrid();
-        const tableBottom = this.grid.getCumulativeHeightAt(this.grid.numRows - 1);
-        const tableRight = this.grid.getCumulativeWidthAt(this.grid.numCols - 1);
-
-        const nextScrollTop =
-            tableBottom < viewportRect.top + viewportRect.height
-                ? // scroll the last row into view
-                  Math.max(0, tableBottom - viewportRect.height)
-                : undefined;
-
-        const nextScrollLeft =
-            tableRight < viewportRect.left + viewportRect.width
-                ? // scroll the last column into view
-                  Math.max(0, tableRight - viewportRect.width)
-                : undefined;
-
-        // these will only be defined if they differ from viewportRect
-        return { nextScrollLeft, nextScrollTop };
-    }
-
-    public componentDidUpdate(prevProps: TableProps, prevState: TableState, snapshot: TableSnapshot) {
-        super.componentDidUpdate(prevProps, prevState, snapshot);
+    public componentDidUpdate(prevProps: Table2Props, prevState: TableState) {
+        super.componentDidUpdate(prevProps, prevState);
         this.hotkeysImpl.setState(this.state);
         this.hotkeysImpl.setProps(this.props);
 
-        const didChildrenChange =
-            (React.Children.toArray(this.props.children) as Array<React.ReactElement<IColumnProps>>) !==
-            this.state.childrenArray;
+        const didChildrenChange = !compareChildren(
+            React.Children.toArray(this.props.children) as Array<React.ReactElement<ColumnProps>>,
+            this.state.childrenArray,
+        );
+
+        if (this.props.cellRendererDependencies !== undefined && prevProps.cellRendererDependencies === undefined) {
+            console.error(Errors.TABLE_INVALID_CELL_RENDERER_DEPS);
+        }
+
+        const didCellRendererDependenciesChange =
+            this.props.cellRendererDependencies !== undefined &&
+            this.props.cellRendererDependencies.some(
+                (dep, index) => dep !== (prevProps.cellRendererDependencies ?? [])[index],
+            );
+
+        const didColumnWidthsChange = !Utils.compareSparseArrays(
+            this.props.columnWidths ?? this.state.columnWidths,
+            prevState.columnWidths,
+        );
+        const didRowHeightsChange = !Utils.compareSparseArrays(
+            this.props.rowHeights ?? this.state.rowHeights,
+            prevState.rowHeights,
+        );
 
         const shouldInvalidateGrid =
             didChildrenChange ||
-            this.props.columnWidths !== prevState.columnWidths ||
-            this.props.rowHeights !== prevState.rowHeights ||
+            didCellRendererDependenciesChange ||
+            didColumnWidthsChange ||
+            didRowHeightsChange ||
             this.props.numRows !== prevProps.numRows ||
             (this.props.forceRerenderOnSelectionChange && this.props.selectedRegions !== prevProps.selectedRegions);
 
@@ -531,18 +610,6 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
             this.updateLocator();
         }
 
-        // When true, we'll need to imperatively synchronize quadrant views after
-        // the update. This check lets us avoid expensively diff'ing columnWidths
-        // and rowHeights in <TableQuadrantStack> on each update.
-        const didUpdateColumnOrRowSizes =
-            !CoreUtils.arraysEqual(this.state.columnWidths, prevState.columnWidths) ||
-            !CoreUtils.arraysEqual(this.state.rowHeights, prevState.rowHeights);
-
-        if (didUpdateColumnOrRowSizes) {
-            this.quadrantStackInstance.synchronizeQuadrantViews();
-            this.syncViewportPosition(snapshot);
-        }
-
         const shouldInvalidateHotkeys =
             this.props.getCellClipboardData !== prevProps.getCellClipboardData ||
             this.props.enableFocusedCell !== prevProps.enableFocusedCell ||
@@ -550,7 +617,12 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
             this.props.selectionModes !== prevProps.selectionModes;
 
         if (shouldInvalidateHotkeys) {
-            this.hotkeys = getHotkeysFromProps(this.props, this.hotkeysImpl);
+            this.hotkeys = getHotkeysFromProps(this.props as TablePropsWithDefaults, this.hotkeysImpl);
+        }
+
+        if (didCellRendererDependenciesChange) {
+            // force an update with the new grid
+            this.forceUpdate();
         }
     }
 
@@ -601,14 +673,22 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
     // =============
 
     private shouldDisableVerticalScroll() {
-        const { enableGhostCells } = this.props;
+        const { enableColumnHeader, enableGhostCells } = this.props;
         const { viewportRect } = this.state;
 
-        const rowIndices = this.grid.getRowIndicesInRect(viewportRect, enableGhostCells);
+        if (this.grid === null || viewportRect === undefined) {
+            return false;
+        }
+
+        const rowIndices = this.grid.getRowIndicesInRect({
+            columnHeaderHeight: enableColumnHeader ? this.columnHeaderHeight : 0,
+            includeGhostCells: enableGhostCells!,
+            rect: viewportRect,
+        });
 
         const isViewportUnscrolledVertically = viewportRect != null && viewportRect.top === 0;
         const areRowHeadersLoading = hasLoadingOption(this.props.loadingOptions, TableLoadingOption.ROW_HEADERS);
-        const areGhostRowsVisible = enableGhostCells && this.grid.isGhostIndex(rowIndices.rowIndexEnd, 0);
+        const areGhostRowsVisible = enableGhostCells! && this.grid.isGhostIndex(rowIndices.rowIndexEnd, 0);
 
         return areGhostRowsVisible && (isViewportUnscrolledVertically || areRowHeadersLoading);
     }
@@ -617,18 +697,25 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
         const { enableGhostCells } = this.props;
         const { viewportRect } = this.state;
 
-        const columnIndices = this.grid.getColumnIndicesInRect(viewportRect, enableGhostCells);
+        if (this.grid === null || viewportRect === undefined) {
+            return false;
+        }
+
+        const columnIndices = this.grid.getColumnIndicesInRect(viewportRect, enableGhostCells!);
 
         const isViewportUnscrolledHorizontally = viewportRect != null && viewportRect.left === 0;
-        const areGhostColumnsVisible = enableGhostCells && this.grid.isGhostColumn(columnIndices.columnIndexEnd);
         const areColumnHeadersLoading = hasLoadingOption(this.props.loadingOptions, TableLoadingOption.COLUMN_HEADERS);
+        const areGhostColumnsVisible = enableGhostCells! && this.grid.isGhostColumn(columnIndices.columnIndexEnd);
 
         return areGhostColumnsVisible && (isViewportUnscrolledHorizontally || areColumnHeadersLoading);
     }
 
-    private renderMenu = (refHandler: IRef<HTMLDivElement>) => {
+    private renderMenu = (refHandler: IRef<HTMLDivElement> | undefined) => {
         const classes = classNames(Classes.TABLE_MENU, {
-            [Classes.TABLE_SELECTION_ENABLED]: isSelectionModeEnabled(this.props, RegionCardinality.FULL_TABLE),
+            [Classes.TABLE_SELECTION_ENABLED]: isSelectionModeEnabled(
+                this.props as TablePropsWithDefaults,
+                RegionCardinality.FULL_TABLE,
+            ),
         });
         return (
             <div className={classes} ref={refHandler} onMouseDown={this.handleMenuMouseDown}>
@@ -656,28 +743,29 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
     };
 
     private getColumnProps(columnIndex: number) {
-        const column = this.state.childrenArray[columnIndex] as React.ReactElement<IColumnProps>;
+        const column = this.state.childrenArray[columnIndex] as React.ReactElement<ColumnProps>;
         return column === undefined ? undefined : column.props;
     }
 
     private columnHeaderCellRenderer = (columnIndex: number) => {
-        const props = this.getColumnProps(columnIndex);
-        if (props === undefined) {
+        const columnProps = this.getColumnProps(columnIndex);
+        if (columnProps === undefined) {
             return null;
         }
 
-        const { id, loadingOptions, cellRenderer, columnHeaderCellRenderer, ...spreadableProps } = props;
+        const { id, cellRenderer, columnHeaderCellRenderer, ...spreadableProps } = columnProps;
 
-        const columnLoading = hasLoadingOption(loadingOptions, ColumnLoadingOption.HEADER);
+        const columnLoading =
+            hasLoadingOption(columnProps.loadingOptions, ColumnLoadingOption.HEADER) ||
+            hasLoadingOption(this.props.loadingOptions, TableLoadingOption.COLUMN_HEADERS);
 
         if (columnHeaderCellRenderer != null) {
             const columnHeaderCell = columnHeaderCellRenderer(columnIndex);
-            const columnHeaderCellLoading = columnHeaderCell.props.loading;
-
-            const columnHeaderCellProps: IColumnHeaderCellProps = {
-                loading: columnHeaderCellLoading != null ? columnHeaderCellLoading : columnLoading,
-            };
-            return React.cloneElement(columnHeaderCell, columnHeaderCellProps);
+            if (columnHeaderCell != null) {
+                return React.cloneElement(columnHeaderCell, {
+                    loading: columnHeaderCell.props.loading ?? columnLoading,
+                });
+            }
         }
 
         const baseProps: IColumnHeaderCellProps = {
@@ -686,7 +774,7 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
             ...spreadableProps,
         };
 
-        if (props.name != null) {
+        if (columnProps.name != null) {
             return <ColumnHeaderCell {...baseProps} />;
         } else {
             return <ColumnHeaderCell {...baseProps} name={Utils.toBase26Alpha(columnIndex)} />;
@@ -695,16 +783,18 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
 
     private renderColumnHeader = (
         refHandler: IRef<HTMLDivElement>,
-        resizeHandler: (verticalGuides: number[]) => void,
+        resizeHandler: (verticalGuides: number[] | null) => void,
         reorderingHandler: (oldIndex: number, newIndex: number, length: number) => void,
         showFrozenColumnsOnly: boolean = false,
     ) => {
         const { focusedCell, selectedRegions, viewportRect } = this.state;
         const {
+            defaultColumnWidth,
             enableMultipleSelection,
             enableGhostCells,
             enableColumnReordering,
             enableColumnResizing,
+            enableRowHeader,
             loadingOptions,
             maxColumnWidth,
             minColumnWidth,
@@ -712,16 +802,36 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
         } = this.props;
 
         const classes = classNames(Classes.TABLE_COLUMN_HEADERS, {
-            [Classes.TABLE_SELECTION_ENABLED]: isSelectionModeEnabled(this.props, RegionCardinality.FULL_COLUMNS),
+            [Classes.TABLE_SELECTION_ENABLED]: isSelectionModeEnabled(
+                this.props as TablePropsWithDefaults,
+                RegionCardinality.FULL_COLUMNS,
+            ),
         });
 
-        const columnIndices = this.grid.getColumnIndicesInRect(viewportRect, enableGhostCells);
+        if (this.grid === null || this.locator === undefined || viewportRect === undefined) {
+            // if we haven't mounted yet (which we need in order for grid/viewport calculations),
+            // we still want to hand a DOM ref over to TableQuadrantStack for later
+            return <div className={classes} ref={refHandler} />;
+        }
+
+        // if we have horizontal overflow, no need to render ghost columns
+        // (this avoids problems like https://github.com/palantir/blueprint/issues/5027)
+        const hasHorizontalOverflow = this.locator.hasHorizontalOverflow(
+            enableRowHeader ? this.rowHeaderWidth : 0,
+            viewportRect,
+        );
+        const columnIndices = this.grid.getColumnIndicesInRect(
+            viewportRect,
+            hasHorizontalOverflow ? false : enableGhostCells,
+        );
+
         const columnIndexStart = showFrozenColumnsOnly ? 0 : columnIndices.columnIndexStart;
         const columnIndexEnd = showFrozenColumnsOnly ? this.getMaxFrozenColumnIndex() : columnIndices.columnIndexEnd;
 
         return (
-            <div className={classes}>
+            <div className={classes} ref={refHandler}>
                 <ColumnHeader
+                    defaultColumnWidth={defaultColumnWidth!}
                     enableMultipleSelection={enableMultipleSelection}
                     cellRenderer={this.columnHeaderCellRenderer}
                     focusedCell={focusedCell}
@@ -730,11 +840,11 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
                     isResizable={enableColumnResizing}
                     loading={hasLoadingOption(loadingOptions, TableLoadingOption.COLUMN_HEADERS)}
                     locator={this.locator}
-                    maxColumnWidth={maxColumnWidth}
-                    measurableElementRef={refHandler}
-                    minColumnWidth={minColumnWidth}
+                    maxColumnWidth={maxColumnWidth!}
+                    minColumnWidth={minColumnWidth!}
                     onColumnWidthChanged={this.handleColumnWidthChanged}
                     onFocusedCell={this.handleFocus}
+                    onMount={this.handleHeaderMounted}
                     onLayoutLock={this.handleLayoutLock}
                     onReordered={this.handleColumnsReordered}
                     onReordering={reorderingHandler}
@@ -755,12 +865,14 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
 
     private renderRowHeader = (
         refHandler: IRef<HTMLDivElement>,
-        resizeHandler: (verticalGuides: number[]) => void,
+        resizeHandler: (verticalGuides: number[] | null) => void,
         reorderingHandler: (oldIndex: number, newIndex: number, length: number) => void,
         showFrozenRowsOnly: boolean = false,
     ) => {
         const { focusedCell, selectedRegions, viewportRect } = this.state;
         const {
+            defaultRowHeight,
+            enableColumnHeader,
             enableMultipleSelection,
             enableGhostCells,
             enableRowReordering,
@@ -773,16 +885,36 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
         } = this.props;
 
         const classes = classNames(Classes.TABLE_ROW_HEADERS, {
-            [Classes.TABLE_SELECTION_ENABLED]: isSelectionModeEnabled(this.props, RegionCardinality.FULL_ROWS),
+            [Classes.TABLE_SELECTION_ENABLED]: isSelectionModeEnabled(
+                this.props as TablePropsWithDefaults,
+                RegionCardinality.FULL_ROWS,
+            ),
         });
 
-        const rowIndices = this.grid.getRowIndicesInRect(viewportRect, enableGhostCells);
+        if (this.grid === null || this.locator === undefined || viewportRect === undefined) {
+            // if we haven't mounted yet (which we need in order for grid/viewport calculations),
+            // we still want to hand a DOM ref over to TableQuadrantStack for later
+            return <div className={classes} ref={refHandler} />;
+        }
+
+        // if we have vertical overflow, no need to render ghost rows
+        // (this avoids problems like https://github.com/palantir/blueprint/issues/5027)
+        const hasVerticalOverflow = this.locator.hasVerticalOverflow(
+            enableColumnHeader ? this.columnHeaderHeight : 0,
+            viewportRect,
+        );
+        const rowIndices = this.grid.getRowIndicesInRect({
+            includeGhostCells: hasVerticalOverflow ? false : enableGhostCells,
+            rect: viewportRect,
+        });
+
         const rowIndexStart = showFrozenRowsOnly ? 0 : rowIndices.rowIndexStart;
         const rowIndexEnd = showFrozenRowsOnly ? this.getMaxFrozenRowIndex() : rowIndices.rowIndexEnd;
 
         return (
             <div className={classes} ref={refHandler}>
                 <RowHeader
+                    defaultRowHeight={defaultRowHeight!}
                     enableMultipleSelection={enableMultipleSelection}
                     focusedCell={focusedCell}
                     grid={this.grid}
@@ -790,10 +922,11 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
                     isReorderable={enableRowReordering}
                     isResizable={enableRowResizing}
                     loading={hasLoadingOption(loadingOptions, TableLoadingOption.ROW_HEADERS)}
-                    maxRowHeight={maxRowHeight}
-                    minRowHeight={minRowHeight}
+                    maxRowHeight={maxRowHeight!}
+                    minRowHeight={minRowHeight!}
                     onFocusedCell={this.handleFocus}
                     onLayoutLock={this.handleLayoutLock}
+                    onMount={this.handleHeaderMounted}
                     onResizeGuide={resizeHandler}
                     onReordered={this.handleRowsReordered}
                     onReordering={reorderingHandler}
@@ -814,28 +947,25 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
     private bodyCellRenderer = (rowIndex: number, columnIndex: number) => {
         const columnProps = this.getColumnProps(columnIndex);
         if (columnProps === undefined) {
-            return null;
+            return undefined;
         }
 
-        const {
-            id,
-            loadingOptions,
-            cellRenderer,
-            columnHeaderCellRenderer,
-            name,
-            nameRenderer,
-            ...restColumnProps
-        } = columnProps;
+        const { id, cellRenderer, columnHeaderCellRenderer, name, nameRenderer, ...restColumnProps } = columnProps;
 
-        const cell = cellRenderer(rowIndex, columnIndex);
-        const { loading = hasLoadingOption(loadingOptions, ColumnLoadingOption.CELLS) } = cell.props;
+        // HACKHACK: cellRenderer prop has a default value, so we can assert non-null
+        const cell = cellRenderer!(rowIndex, columnIndex);
+        if (cell === undefined) {
+            return undefined;
+        }
 
-        const cellProps: ICellProps = {
+        const inheritedIsLoading =
+            hasLoadingOption(columnProps.loadingOptions, ColumnLoadingOption.CELLS) ||
+            hasLoadingOption(this.props.loadingOptions, TableLoadingOption.CELLS);
+
+        return React.cloneElement(cell, {
             ...restColumnProps,
-            loading,
-        };
-
-        return React.cloneElement(cell, cellProps);
+            loading: cell.props.loading ?? inheritedIsLoading,
+        });
     };
 
     private renderBody = (
@@ -852,14 +982,36 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
         } = this.state;
         const {
             enableMultipleSelection,
+            enableColumnHeader,
             enableGhostCells,
+            enableRowHeader,
             loadingOptions,
             bodyContextMenuRenderer,
             selectedRegionTransform,
         } = this.props;
 
-        const rowIndices = this.grid.getRowIndicesInRect(viewportRect, enableGhostCells);
-        const columnIndices = this.grid.getColumnIndicesInRect(viewportRect, enableGhostCells);
+        if (this.grid === null || this.locator === undefined || viewportRect === undefined) {
+            return undefined;
+        }
+
+        // if we have vertical/horizontal overflow, no need to render ghost rows/columns (respectively)
+        // (this avoids problems like https://github.com/palantir/blueprint/issues/5027)
+        const hasVerticalOverflow = this.locator.hasVerticalOverflow(
+            enableColumnHeader ? this.columnHeaderHeight : 0,
+            viewportRect,
+        );
+        const hasHorizontalOverflow = this.locator.hasHorizontalOverflow(
+            enableRowHeader ? this.rowHeaderWidth : 0,
+            viewportRect,
+        );
+        const rowIndices = this.grid.getRowIndicesInRect({
+            includeGhostCells: hasVerticalOverflow ? false : enableGhostCells,
+            rect: viewportRect,
+        });
+        const columnIndices = this.grid.getColumnIndicesInRect(
+            viewportRect,
+            hasHorizontalOverflow ? false : enableGhostCells,
+        );
 
         // start beyond the frozen area if rendering unrelated quadrants, so we
         // don't render duplicate cells underneath the frozen ones.
@@ -904,12 +1056,12 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
         );
     };
 
-    private isGuidesShowing() {
-        return this.state.verticalGuides != null || this.state.horizontalGuides != null;
+    private isGuideLayerShowing() {
+        return this.state.verticalGuides.length > 0 || this.state.horizontalGuides.length > 0;
     }
 
     private getEnabledSelectionHandler = (selectionMode: RegionCardinality) => {
-        if (!isSelectionModeEnabled(this.props, selectionMode)) {
+        if (!isSelectionModeEnabled(this.props as TablePropsWithDefaults, selectionMode)) {
             // If the selection mode isn't enabled, return a callback that
             // will clear the selection. For example, if row selection is
             // disabled, clicking on the row header will clear the table's
@@ -925,31 +1077,46 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
         this.grid = null;
     }
 
-    private validateGrid() {
-        if (this.grid == null) {
-            const { defaultRowHeight, defaultColumnWidth } = this.props;
-            const { rowHeights, columnWidths } = this.state;
-            this.grid = new Grid(rowHeights, columnWidths, Grid.DEFAULT_BLEED, defaultRowHeight, defaultColumnWidth);
-            this.invokeOnVisibleCellsChangeCallback(this.state.viewportRect);
+    /**
+     * This method's arguments allow us to support the following use case:
+     * In some cases, we want to update the grid _before_ this.setState() is called with updated
+     * `columnWidths` or `rowHeights` so that when that setState update _does_ flush through the React render
+     * tree, our TableQuadrantStack has the correct updated grid measurements.
+     */
+    private validateGrid({ columnWidths, rowHeights }: Partial<Pick<TableState, "columnWidths" | "rowHeights">> = {}) {
+        if (this.grid == null || columnWidths !== undefined || rowHeights !== undefined) {
+            const { defaultRowHeight, defaultColumnWidth, numFrozenColumns } = this.props;
+
+            // gridBleed should always be >= numFrozenColumns since columnIndexStart adds numFrozenColumns
+            const gridBleed = Math.max(Grid.DEFAULT_BLEED, numFrozenColumns!);
+            this.grid = new Grid(
+                rowHeights ?? this.state.rowHeights,
+                columnWidths ?? this.state.columnWidths,
+                gridBleed,
+                defaultRowHeight,
+                defaultColumnWidth,
+            );
+            this.invokeOnVisibleCellsChangeCallback(this.state.viewportRect!);
             this.hotkeysImpl.setGrid(this.grid);
         }
+        return this.grid;
     }
 
     /**
      * Renders a `RegionLayer`, applying styles to the regions using the
-     * supplied `RegionStyler`. `RegionLayer` is a `PureRender` component, so
+     * supplied `RegionStyler`. `RegionLayer` is a pure component, so
      * the `RegionStyler` should be a new instance on every render if we
      * intend to redraw the region layer.
      */
     private maybeRenderRegions(getRegionStyle: RegionStyler, quadrantType?: QuadrantType) {
-        if (this.isGuidesShowing() && !this.state.isReordering) {
+        if (this.isGuideLayerShowing() && !this.state.isReordering) {
             // we want to show guides *and* the selection styles when reordering rows or columns
             return undefined;
         }
 
         const regionGroups = Regions.joinStyledRegionGroups(
             this.state.selectedRegions,
-            this.props.styledRegionGroups,
+            this.props.styledRegionGroups ?? [],
             this.state.focusedCell,
         );
 
@@ -966,19 +1133,47 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
         });
     }
 
+    private handleHeaderMounted = (whichHeader: "column" | "row") => {
+        const { didHeadersMount } = this.state;
+        if (didHeadersMount) {
+            return;
+        }
+
+        if (whichHeader === "column") {
+            this.didColumnHeaderMount = true;
+        } else {
+            this.didRowHeaderMount = true;
+        }
+
+        if (this.didColumnHeaderMount && this.didRowHeaderMount) {
+            this.setState({ didHeadersMount: true });
+        }
+    };
+
     private handleCompleteRender = () => {
-        // the first onCompleteRender is triggered before the viewportRect is
-        // defined and the second after the viewportRect has been set. the cells
+        // The first onCompleteRender is triggered before the viewportRect is
+        // defined and the second after the viewportRect has been set. The cells
         // will only actually render once the viewportRect is defined though, so
         // we defer invoking onCompleteRender until that check passes.
-        if (this.state.viewportRect != null) {
+
+        // Additional note: we run into an unfortunate race condition between the order of execution
+        // of this callback and this.handleHeaderMounted(...). The setState() call in the latter
+        // does not update this.state quickly enough for us to query for the new state here, so instead
+        // we read the private member variables which are the dependent parts of that "didHeadersMount"
+        // state.
+        const didHeadersMount = this.didColumnHeaderMount && this.didRowHeaderMount;
+        if (this.state.viewportRect != null && didHeadersMount) {
             this.props.onCompleteRender?.();
             this.didCompletelyMount = true;
         }
     };
 
-    private styleBodyRegion = (region: Region, quadrantType: QuadrantType): React.CSSProperties => {
+    private styleBodyRegion = (region: Region, quadrantType?: QuadrantType): React.CSSProperties => {
         const { numFrozenColumns } = this.props;
+
+        if (this.grid == null) {
+            return {};
+        }
 
         const cardinality = Regions.getRegionCardinality(region);
         const style = this.grid.getRegionStyle(region);
@@ -1026,7 +1221,7 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
 
     private styleMenuRegion = (region: Region): React.CSSProperties => {
         const { viewportRect } = this.state;
-        if (viewportRect == null) {
+        if (this.grid == null || viewportRect == null) {
             return {};
         }
         const cardinality = Regions.getRegionCardinality(region);
@@ -1049,7 +1244,7 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
 
     private styleColumnHeaderRegion = (region: Region): React.CSSProperties => {
         const { viewportRect } = this.state;
-        if (viewportRect == null) {
+        if (this.grid == null || viewportRect == null) {
             return {};
         }
         const cardinality = Regions.getRegionCardinality(region);
@@ -1072,7 +1267,7 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
 
     private styleRowHeaderRegion = (region: Region): React.CSSProperties => {
         const { viewportRect } = this.state;
-        if (viewportRect == null) {
+        if (this.grid == null || viewportRect == null) {
             return {};
         }
         const cardinality = Regions.getRegionCardinality(region);
@@ -1109,13 +1304,9 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
             columnWidths[columnIndex] = width;
         }
 
-        this.invalidateGrid();
+        this.validateGrid({ columnWidths });
         this.setState({ columnWidths });
-
-        const { onColumnWidthChanged } = this.props;
-        if (onColumnWidthChanged != null) {
-            onColumnWidthChanged(columnIndex, width);
-        }
+        this.props.onColumnWidthChanged?.(columnIndex, width);
     };
 
     private handleRowHeightChanged = (rowIndex: number, height: number) => {
@@ -1135,13 +1326,9 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
             rowHeights[rowIndex] = height;
         }
 
-        this.invalidateGrid();
+        this.validateGrid({ rowHeights });
         this.setState({ rowHeights });
-
-        const { onRowHeightChanged } = this.props;
-        if (onRowHeightChanged != null) {
-            onRowHeightChanged(rowIndex, height);
-        }
+        this.props.onRowHeightChanged?.(rowIndex, height);
     };
 
     private handleRootScroll = (_event: React.UIEvent<HTMLElement>) => {
@@ -1156,13 +1343,12 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
     };
 
     private handleBodyScroll = (event: React.SyntheticEvent<HTMLElement>) => {
-        // Prevent the event from propagating to avoid a resize event on the
-        // resize sensor.
+        // Prevent the event from propagating to avoid a resize event on the resize sensor.
         event.stopPropagation();
 
         if (this.locator != null && !this.state.isLayoutLocked) {
-            const viewportRect = this.locator.getViewportRect();
-            this.updateViewportRect(viewportRect);
+            const newViewportRect = this.locator.getViewportRect();
+            this.updateViewportRect(newViewportRect);
         }
     };
 
@@ -1172,6 +1358,10 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
 
     private syncViewportPosition = ({ nextScrollLeft, nextScrollTop }: TableSnapshot) => {
         const { viewportRect } = this.state;
+
+        if (this.scrollContainerElement == null || this.columnHeaderElement == null || viewportRect === undefined) {
+            return;
+        }
 
         if (nextScrollLeft !== undefined || nextScrollTop !== undefined) {
             // we need to modify the scroll container explicitly for the viewport to shift. in so
@@ -1190,12 +1380,17 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
                 this.scrollContainerElement.scrollLeft = nextScrollLeft + leftCorrection;
             }
 
-            const nextViewportRect = new Rect(nextScrollLeft, nextScrollTop, viewportRect.width, viewportRect.height);
+            const nextViewportRect = new Rect(
+                nextScrollLeft ?? 0,
+                nextScrollTop ?? 0,
+                viewportRect.width,
+                viewportRect.height,
+            );
             this.updateViewportRect(nextViewportRect);
         }
     };
 
-    private handleFocus = (focusedCell: IFocusedCellCoordinates) => {
+    private handleFocus = (focusedCell: FocusedCellCoordinates) => {
         if (!this.props.enableFocusedCell) {
             // don't set focus state if focus is not allowed
             return;
@@ -1226,7 +1421,7 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
     };
 
     private handleColumnsReordered = (oldIndex: number, newIndex: number, length: number) => {
-        this.setState({ isReordering: false, verticalGuides: undefined });
+        this.setState({ isReordering: false, verticalGuides: [] });
         this.props.onColumnsReordered?.(oldIndex, newIndex, length);
     };
 
@@ -1235,7 +1430,7 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
     };
 
     private handleRowsReordered = (oldIndex: number, newIndex: number, length: number) => {
-        this.setState({ isReordering: false, horizontalGuides: undefined });
+        this.setState({ isReordering: false, horizontalGuides: [] });
         this.props.onRowsReordered?.(oldIndex, newIndex, length);
     };
 
@@ -1244,13 +1439,21 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
     };
 
     private updateLocator() {
+        if (this.locator === undefined || this.grid == null) {
+            return;
+        }
+
         this.locator
             .setGrid(this.grid)
             .setNumFrozenRows(this.state.numFrozenRowsClamped)
             .setNumFrozenColumns(this.state.numFrozenColumnsClamped);
     }
 
-    private updateViewportRect = (nextViewportRect: Rect) => {
+    private updateViewportRect = (nextViewportRect: Rect | undefined) => {
+        if (nextViewportRect === undefined) {
+            return;
+        }
+
         const { viewportRect } = this.state;
         this.setState({ viewportRect: nextViewportRect });
 
@@ -1264,19 +1467,20 @@ export class Table2 extends AbstractComponent2<TableProps, TableState, TableSnap
     };
 
     private invokeOnVisibleCellsChangeCallback(viewportRect: Rect) {
+        if (this.grid == null) {
+            return;
+        }
         const columnIndices = this.grid.getColumnIndicesInRect(viewportRect);
-        const rowIndices = this.grid.getRowIndicesInRect(viewportRect);
+        const rowIndices = this.grid.getRowIndicesInRect({ rect: viewportRect });
         this.props.onVisibleCellsChange?.(rowIndices, columnIndices);
     }
 
     private getMaxFrozenColumnIndex = () => {
-        const { numFrozenColumnsClamped: numFrozenColumns } = this.state;
-        return numFrozenColumns != null ? numFrozenColumns - 1 : undefined;
+        return this.state.numFrozenColumnsClamped - 1;
     };
 
     private getMaxFrozenRowIndex = () => {
-        const { numFrozenRowsClamped: numFrozenRows } = this.state;
-        return numFrozenRows != null ? numFrozenRows - 1 : undefined;
+        return this.state.numFrozenRowsClamped - 1;
     };
 
     /**
