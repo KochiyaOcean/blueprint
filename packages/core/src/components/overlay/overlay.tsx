@@ -21,7 +21,7 @@ import { CSSTransition, TransitionGroup } from "react-transition-group";
 
 import { AbstractPureComponent2, Classes, Keys } from "../../common";
 import { DISPLAYNAME_PREFIX, HTMLDivProps, Props } from "../../common/props";
-import { isFunction } from "../../common/utils";
+import { getActiveElement, isFunction } from "../../common/utils";
 import { Portal } from "../portal/portal";
 
 // eslint-disable-next-line deprecation/deprecation
@@ -108,6 +108,15 @@ export interface IOverlayableProps extends IOverlayLifecycleProps {
      * @default document.body
      */
     portalContainer?: HTMLElement;
+
+    /**
+     * A list of DOM events which should be stopped from propagating through the Portal.
+     * This prop is ignored if `usePortal` is `false`.
+     *
+     * @see https://legacy.reactjs.org/docs/portals.html#event-bubbling-through-portals
+     * @see https://github.com/palantir/blueprint/issues/6124
+     */
+    portalStopPropagationEvents?: Array<keyof HTMLElementEventMap>;
 
     /**
      * A callback that is invoked when user interaction causes the overlay to close, such as
@@ -199,6 +208,11 @@ export interface IOverlayState {
     hasEverOpened?: boolean;
 }
 
+/**
+ * Overlay component.
+ *
+ * @see https://blueprintjs.com/docs/#core/components/overlay
+ */
 export class Overlay extends AbstractPureComponent2<OverlayProps, IOverlayState> {
     public static displayName = `${DISPLAYNAME_PREFIX}.Overlay`;
 
@@ -313,7 +327,11 @@ export class Overlay extends AbstractPureComponent2<OverlayProps, IOverlayState>
         );
         if (usePortal) {
             return (
-                <Portal className={this.props.portalClassName} container={this.props.portalContainer}>
+                <Portal
+                    className={this.props.portalClassName}
+                    container={this.props.portalContainer}
+                    stopPropagationEvents={this.props.portalStopPropagationEvents}
+                >
                     {transitionGroup}
                 </Portal>
             );
@@ -349,11 +367,13 @@ export class Overlay extends AbstractPureComponent2<OverlayProps, IOverlayState>
         return this.requestAnimationFrame(() => {
             // container ref may be undefined between component mounting and Portal rendering
             // activeElement may be undefined in some rare cases in IE
-            if (this.containerElement == null || document.activeElement == null || !this.props.isOpen) {
+            const activeElement = getActiveElement(this.containerElement);
+
+            if (this.containerElement == null || activeElement == null || !this.props.isOpen) {
                 return;
             }
 
-            const isFocusOutsideModal = !this.containerElement.contains(document.activeElement);
+            const isFocusOutsideModal = !this.containerElement.contains(activeElement);
             if (isFocusOutsideModal) {
                 this.startFocusTrapElement?.focus({ preventScroll: true });
                 this.isAutoFocusing = false;
@@ -594,7 +614,7 @@ export class Overlay extends AbstractPureComponent2<OverlayProps, IOverlayState>
             document.body.classList.add(Classes.OVERLAY_OPEN);
         }
 
-        this.lastActiveElementBeforeOpened = document.activeElement;
+        this.lastActiveElementBeforeOpened = getActiveElement(this.containerElement);
     }
 
     private handleTransitionExited = (node: HTMLElement) => {
@@ -657,10 +677,10 @@ export class Overlay extends AbstractPureComponent2<OverlayProps, IOverlayState>
 
     private handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
         const { canEscapeKeyClose, onClose } = this.props;
-        // HACKHACK: https://github.com/palantir/blueprint/issues/4165
-        /* eslint-disable-next-line deprecation/deprecation */
-        if (e.which === Keys.ESCAPE && canEscapeKeyClose) {
+        if (e.key === "Escape" && canEscapeKeyClose) {
             onClose?.(e);
+            // prevent other overlays from closing
+            e.stopPropagation();
             // prevent browser-specific escape key behavior (Safari exits fullscreen)
             e.preventDefault();
         }

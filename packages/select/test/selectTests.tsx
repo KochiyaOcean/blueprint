@@ -14,29 +14,36 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview This component is DEPRECATED, and the code is frozen.
+ * All changes & bugfixes should be made to Select2 instead.
+ */
+
+/* eslint-disable deprecation/deprecation, @blueprintjs/no-deprecated-components */
+
 import { assert } from "chai";
 import { mount } from "enzyme";
 import * as React from "react";
 import * as sinon from "sinon";
 
-import { InputGroup, Keys, Popover } from "@blueprintjs/core";
+import { Classes, InputGroup, Keys, Popover } from "@blueprintjs/core";
 
-import { IFilm, renderFilm, TOP_100_FILMS } from "../../docs-app/src/common/films";
-import { IItemRendererProps, ISelectProps, ISelectState, Select } from "../src";
+import { ISelectProps, ISelectState, ItemRendererProps, Select } from "../src";
+import { Film, renderFilm, TOP_100_FILMS } from "../src/__examples__";
 import { selectComponentSuite } from "./selectComponentSuite";
 
 describe("<Select>", () => {
-    const FilmSelect = Select.ofType<IFilm>();
     const defaultProps = {
         items: TOP_100_FILMS,
         popoverProps: { isOpen: true, usePortal: false },
         query: "",
     };
     let handlers: {
-        itemPredicate: sinon.SinonSpy<[string, IFilm], boolean>;
-        itemRenderer: sinon.SinonSpy<[IFilm, IItemRendererProps], JSX.Element | null>;
+        itemPredicate: sinon.SinonSpy<[string, Film], boolean>;
+        itemRenderer: sinon.SinonSpy<[Film, ItemRendererProps], JSX.Element | null>;
         onItemSelect: sinon.SinonSpy;
     };
+    let testsContainerElement: HTMLElement | undefined;
 
     beforeEach(() => {
         handlers = {
@@ -44,29 +51,32 @@ describe("<Select>", () => {
             itemRenderer: sinon.spy(renderFilm),
             onItemSelect: sinon.spy(),
         };
+        testsContainerElement = document.createElement("div");
+        document.body.appendChild(testsContainerElement);
     });
 
-    selectComponentSuite<ISelectProps<IFilm>, ISelectState>(props =>
+    afterEach(() => {
+        testsContainerElement?.remove();
+    });
+
+    selectComponentSuite<ISelectProps<Film>, ISelectState>(props =>
         mount(<Select {...props} popoverProps={{ isOpen: true, usePortal: false }} />),
     );
 
     it("renders a Popover around children that contains InputGroup and items", () => {
         const wrapper = select();
         assert.lengthOf(wrapper.find(InputGroup), 1, "should render InputGroup");
-        /* eslint-disable-next-line deprecation/deprecation */
         assert.lengthOf(wrapper.find(Popover), 1, "should render Popover");
     });
 
     it("filterable=false hides InputGroup", () => {
         const wrapper = select({ filterable: false });
         assert.lengthOf(wrapper.find(InputGroup), 0, "should not render InputGroup");
-        /* eslint-disable-next-line deprecation/deprecation */
         assert.lengthOf(wrapper.find(Popover), 1, "should render Popover");
     });
 
     it("disabled=true disables Popover", () => {
         const wrapper = select({ disabled: true });
-        /* eslint-disable-next-line deprecation/deprecation */
         assert.strictEqual(wrapper.find(Popover).prop("disabled"), true);
     });
 
@@ -93,7 +103,6 @@ describe("<Select>", () => {
         const modifiers = {}; // our own instance
         const wrapper = select({ popoverProps: { onOpening, modifiers } });
         wrapper.find("[data-testid='target-button']").simulate("click");
-        /* eslint-disable-next-line deprecation/deprecation */
         assert.strictEqual(wrapper.find(Popover).prop("modifiers"), modifiers);
         assert.isTrue(onOpening.calledOnce);
     });
@@ -108,11 +117,26 @@ describe("<Select>", () => {
         assert.strictEqual(wrapper.find(Popover).prop("isOpen"), true);
     });
 
-    function select(props: Partial<ISelectProps<IFilm>> = {}, query?: string) {
+    it("matchTargetWidth={true} makes popover same width as target", done => {
+        const wrapper = select({ matchTargetWidth: true });
+        // wait one frame for popper.js v1 to position the popover and apply our custom modifier
+        setTimeout(() => {
+            const popoverWidth = wrapper.find(`.${Classes.POPOVER}`).hostNodes().getDOMNode().clientWidth;
+            const targetWidth = wrapper.find(`.${Classes.POPOVER_TARGET}`).hostNodes().getDOMNode().clientWidth;
+            assert.notEqual(popoverWidth, 0, "popover width should be > 0");
+            assert.notEqual(targetWidth, 0, "target width should be > 0");
+            assert.closeTo(targetWidth, popoverWidth, 1, "popover width should be close to target width");
+            wrapper.detach();
+            done();
+        });
+    });
+
+    function select(props: Partial<ISelectProps<Film>> = {}, query?: string) {
         const wrapper = mount(
-            <FilmSelect {...defaultProps} {...handlers} {...props}>
+            <Select<Film> {...defaultProps} {...handlers} {...props}>
                 <button data-testid="target-button">Target</button>
-            </FilmSelect>,
+            </Select>,
+            { attachTo: testsContainerElement },
         );
         if (query !== undefined) {
             wrapper.setState({ query });
@@ -121,6 +145,6 @@ describe("<Select>", () => {
     }
 });
 
-function filterByYear(query: string, film: IFilm) {
+function filterByYear(query: string, film: Film) {
     return query === "" || film.year.toString() === query;
 }

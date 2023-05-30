@@ -20,6 +20,7 @@ import * as React from "react";
 import { IconName, iconNameToPathsRecordKey, IconSvgPaths16, IconSvgPaths20 } from "@blueprintjs/icons";
 
 import { AbstractPureComponent2, Classes, DISPLAYNAME_PREFIX, IntentProps, MaybeElement, Props } from "../../common";
+import { uniqueId } from "../../common/utils";
 
 export type { IconName };
 
@@ -82,6 +83,9 @@ export interface IIconProps extends IntentProps, Props {
     /** CSS style properties. */
     style?: React.CSSProperties;
 
+    /** Props to apply to the `SVG` element */
+    svgProps?: React.HTMLAttributes<SVGElement>;
+
     /**
      * HTML tag to use for the rendered element.
      *
@@ -95,13 +99,19 @@ export interface IIconProps extends IntentProps, Props {
      * aural feedback.
      *
      * If this value is nullish, `false`, or an empty string, the component will assume
-     * that the icon is decorative and `aria-hidden="true"` will be applied.
+     * that the icon is decorative and `aria-hidden="true"` will be applied (can be overridden
+     * by manually passing `aria-hidden` prop).
      *
      * @see https://www.w3.org/WAI/tutorials/images/decorative/
      */
     title?: string | false | null;
 }
 
+/**
+ * Icon component.
+ *
+ * @see https://blueprintjs.com/docs/#core/components/icon
+ */
 export class Icon extends AbstractPureComponent2<IconProps & Omit<React.HTMLAttributes<HTMLElement>, "title">> {
     public static displayName = `${DISPLAYNAME_PREFIX}.Icon`;
 
@@ -121,6 +131,7 @@ export class Icon extends AbstractPureComponent2<IconProps & Omit<React.HTMLAttr
             iconSize,
             intent,
             size = iconSize ?? IconSize.STANDARD,
+            svgProps,
             title,
             tagName = "span",
             ...htmlprops
@@ -134,16 +145,27 @@ export class Icon extends AbstractPureComponent2<IconProps & Omit<React.HTMLAttr
         const classes = classNames(Classes.ICON, Classes.iconClass(icon), Classes.intentClass(intent), className);
         const viewBox = `0 0 ${pixelGridSize} ${pixelGridSize}`;
 
+        const titleId = uniqueId("iconTitle");
+
         return React.createElement(
             tagName,
             {
-                ...htmlprops,
                 "aria-hidden": title ? undefined : true,
+                ...htmlprops,
                 className: classes,
                 title: htmlTitle,
             },
-            <svg fill={color} data-icon={icon} width={size} height={size} viewBox={viewBox}>
-                {title && <desc>{title}</desc>}
+            <svg
+                fill={color}
+                data-icon={icon}
+                width={size}
+                height={size}
+                viewBox={viewBox}
+                aria-labelledby={title ? titleId : undefined}
+                role="img"
+                {...svgProps}
+            >
+                {title && <title id={titleId}>{title}</title>}
                 {paths}
             </svg>,
         );

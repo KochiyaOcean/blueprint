@@ -23,7 +23,6 @@ import {
     DISPLAYNAME_PREFIX,
     HotkeyConfig,
     HotkeysTarget2,
-    IRef,
     UseHotkeysReturnValue,
 } from "@blueprintjs/core";
 
@@ -31,16 +30,16 @@ import { CellRenderer } from "./cell/cell";
 import { Column, ColumnProps } from "./column";
 import type { FocusedCellCoordinates } from "./common/cellTypes";
 import * as Classes from "./common/classes";
-import { columnInteractionBarContextTypes, IColumnInteractionBarContextTypes } from "./common/context";
 import * as Errors from "./common/errors";
 import { Grid, ICellMapper } from "./common/grid";
 import * as FocusedCellUtils from "./common/internal/focusedCellUtils";
 import * as ScrollUtils from "./common/internal/scrollUtils";
 import { Rect } from "./common/rect";
 import { RenderMode } from "./common/renderMode";
+import { ScrollDirection } from "./common/scrollDirection";
 import { Utils } from "./common/utils";
 import { ColumnHeader } from "./headers/columnHeader";
-import { ColumnHeaderCell, IColumnHeaderCellProps } from "./headers/columnHeaderCell";
+import { ColumnHeaderCell2, ColumnHeaderCell2Props } from "./headers/columnHeaderCell2";
 import { renderDefaultRowHeader, RowHeader } from "./headers/rowHeader";
 import { ResizeSensor } from "./interactions/resizeSensor";
 import { GuideLayer } from "./layers/guides";
@@ -55,7 +54,7 @@ import {
     resizeRowsByTallestCell,
 } from "./resizeRows";
 import { compareChildren, getHotkeysFromProps, isSelectionModeEnabled } from "./table2Utils";
-import { TableBody } from "./tableBody";
+import { TableBody2 } from "./tableBody2";
 import { TableHotkeys } from "./tableHotkeys";
 import type { TableProps, TablePropsDefaults, TablePropsWithDefaults } from "./tableProps";
 import type { TableSnapshot, TableState } from "./tableState";
@@ -70,6 +69,11 @@ export interface Table2Props extends TableProps {
     cellRendererDependencies?: React.DependencyList;
 }
 
+/**
+ * Table (v2) component.
+ *
+ * @see https://blueprintjs.com/docs/#table/table2
+ */
 export class Table2 extends AbstractComponent2<Table2Props, TableState, TableSnapshot> {
     public static displayName = `${DISPLAYNAME_PREFIX}.Table2`;
 
@@ -97,9 +101,6 @@ export class Table2 extends AbstractComponent2<Table2Props, TableState, TableSna
         rowHeaderCellRenderer: renderDefaultRowHeader,
         selectionModes: SelectionModes.ALL,
     };
-
-    public static childContextTypes: React.ValidationMap<IColumnInteractionBarContextTypes> =
-        columnInteractionBarContextTypes;
 
     public static getDerivedStateFromProps(props: TablePropsWithDefaults, state: TableState) {
         const {
@@ -430,14 +431,54 @@ export class Table2 extends AbstractComponent2<Table2Props, TableState, TableSna
         this.quadrantStackInstance.scrollToPosition(correctedScrollLeft, correctedScrollTop);
     }
 
+    /**
+     * Scrolls the table by a specified number of offset pixels in either the horizontal or vertical dimension.
+     * Will set a scroll indicator gradient which can be cleared by calling scrollByOffset(null);
+     *
+     * @param relativeOffset - How much to scroll the table body in pixels relative to the current scroll offset
+     */
+    public scrollByOffset(relativeOffset: { left: number; top: number } | null) {
+        let scrollDirection: ScrollDirection | undefined;
+        if (relativeOffset) {
+            if (Math.abs(relativeOffset.left) > Math.abs(relativeOffset.top)) {
+                if (relativeOffset.left < 0) {
+                    scrollDirection = ScrollDirection.LEFT;
+                } else {
+                    scrollDirection = ScrollDirection.RIGHT;
+                }
+            } else {
+                if (relativeOffset.top < 0) {
+                    scrollDirection = ScrollDirection.TOP;
+                } else {
+                    scrollDirection = ScrollDirection.BOTTOM;
+                }
+            }
+        }
+        if (this.shouldRenderScrollDirection(scrollDirection) || scrollDirection == null) {
+            this.setState({ scrollDirection });
+        }
+        const { viewportRect } = this.state;
+
+        if (viewportRect === undefined || this.grid === null || this.quadrantStackInstance === undefined) {
+            return;
+        }
+
+        if (relativeOffset !== null) {
+            const { left: currScrollLeft, top: currScrollTop } = viewportRect;
+            const correctedScrollLeft = this.shouldDisableHorizontalScroll() ? 0 : currScrollLeft + relativeOffset.left;
+            const correctedScrollTop = this.shouldDisableVerticalScroll() ? 0 : currScrollTop + relativeOffset.top;
+
+            if (!this.shouldRenderScrollDirection(this.state.scrollDirection)) {
+                this.setState({ scrollDirection: null });
+            }
+
+            // defer to the quadrant stack to keep all quadrant positions in sync
+            this.quadrantStackInstance.scrollToPosition(correctedScrollLeft, correctedScrollTop);
+        }
+    }
+
     // React lifecycle
     // ===============
-
-    public getChildContext(): IColumnInteractionBarContextTypes {
-        return {
-            enableColumnInteractionBar: this.props.enableColumnInteractionBar!,
-        };
-    }
 
     public shouldComponentUpdate(nextProps: Table2Props, nextState: TableState) {
         const propKeysDenylist = { exclude: Table2.SHALLOW_COMPARE_PROP_KEYS_DENYLIST };
@@ -524,6 +565,7 @@ export class Table2 extends AbstractComponent2<Table2Props, TableState, TableSna
                     rowHeaderRef={this.refHandlers.rowHeader}
                     scrollContainerRef={this.refHandlers.scrollContainer}
                     enableColumnHeader={enableColumnHeader}
+                    renderScrollIndicatorOverlay={this.renderScrollIndicatorOverlay}
                 />
                 <div className={classNames(Classes.TABLE_OVERLAY_LAYER, Classes.TABLE_OVERLAY_REORDERING_CURSOR)} />
                 <GuideLayer
@@ -710,7 +752,28 @@ export class Table2 extends AbstractComponent2<Table2Props, TableState, TableSna
         return areGhostColumnsVisible && (isViewportUnscrolledHorizontally || areColumnHeadersLoading);
     }
 
-    private renderMenu = (refHandler: IRef<HTMLDivElement> | undefined) => {
+    private shouldRenderScrollDirection(scrollDirection?: ScrollDirection | null) {
+        if (!this.scrollContainerElement || !this.state.viewportRect) {
+            return false;
+        }
+        const scrollWrapper = this.scrollContainerElement;
+        const { left: currScrollLeft, top: currScrollTop } = this.state.viewportRect;
+
+        switch (scrollDirection) {
+            case "left":
+                return currScrollLeft > 0;
+            case "right":
+                return scrollWrapper.scrollWidth - scrollWrapper.offsetWidth !== currScrollLeft;
+            case "top":
+                return currScrollTop > 0;
+            case "bottom":
+                return scrollWrapper.scrollHeight - scrollWrapper.offsetHeight !== currScrollTop;
+            default:
+                return false;
+        }
+    }
+
+    private renderMenu = (refHandler: React.Ref<HTMLDivElement> | undefined) => {
         const classes = classNames(Classes.TABLE_MENU, {
             [Classes.TABLE_SELECTION_ENABLED]: isSelectionModeEnabled(
                 this.props as TablePropsWithDefaults,
@@ -763,26 +826,28 @@ export class Table2 extends AbstractComponent2<Table2Props, TableState, TableSna
             const columnHeaderCell = columnHeaderCellRenderer(columnIndex);
             if (columnHeaderCell != null) {
                 return React.cloneElement(columnHeaderCell, {
+                    enableColumnInteractionBar: this.props.enableColumnInteractionBar,
                     loading: columnHeaderCell.props.loading ?? columnLoading,
                 });
             }
         }
 
-        const baseProps: IColumnHeaderCellProps = {
+        const baseProps: ColumnHeaderCell2Props = {
+            enableColumnInteractionBar: this.props.enableColumnInteractionBar,
             index: columnIndex,
             loading: columnLoading,
             ...spreadableProps,
         };
 
         if (columnProps.name != null) {
-            return <ColumnHeaderCell {...baseProps} />;
+            return <ColumnHeaderCell2 {...baseProps} />;
         } else {
-            return <ColumnHeaderCell {...baseProps} name={Utils.toBase26Alpha(columnIndex)} />;
+            return <ColumnHeaderCell2 {...baseProps} name={Utils.toBase26Alpha(columnIndex)} />;
         }
     };
 
     private renderColumnHeader = (
-        refHandler: IRef<HTMLDivElement>,
+        refHandler: React.Ref<HTMLDivElement>,
         resizeHandler: (verticalGuides: number[] | null) => void,
         reorderingHandler: (oldIndex: number, newIndex: number, length: number) => void,
         showFrozenColumnsOnly: boolean = false,
@@ -814,15 +879,15 @@ export class Table2 extends AbstractComponent2<Table2Props, TableState, TableSna
             return <div className={classes} ref={refHandler} />;
         }
 
-        // if we have horizontal overflow, no need to render ghost columns
+        // if we have horizontal overflow or exact fit, no need to render ghost columns
         // (this avoids problems like https://github.com/palantir/blueprint/issues/5027)
-        const hasHorizontalOverflow = this.locator.hasHorizontalOverflow(
+        const hasHorizontalOverflowOrExactFit = this.locator.hasHorizontalOverflowOrExactFit(
             enableRowHeader ? this.rowHeaderWidth : 0,
             viewportRect,
         );
         const columnIndices = this.grid.getColumnIndicesInRect(
             viewportRect,
-            hasHorizontalOverflow ? false : enableGhostCells,
+            hasHorizontalOverflowOrExactFit ? false : enableGhostCells,
         );
 
         const columnIndexStart = showFrozenColumnsOnly ? 0 : columnIndices.columnIndexStart;
@@ -864,7 +929,7 @@ export class Table2 extends AbstractComponent2<Table2Props, TableState, TableSna
     };
 
     private renderRowHeader = (
-        refHandler: IRef<HTMLDivElement>,
+        refHandler: React.Ref<HTMLDivElement>,
         resizeHandler: (verticalGuides: number[] | null) => void,
         reorderingHandler: (oldIndex: number, newIndex: number, length: number) => void,
         showFrozenRowsOnly: boolean = false,
@@ -897,14 +962,14 @@ export class Table2 extends AbstractComponent2<Table2Props, TableState, TableSna
             return <div className={classes} ref={refHandler} />;
         }
 
-        // if we have vertical overflow, no need to render ghost rows
+        // if we have vertical overflow or exact fit, no need to render ghost rows
         // (this avoids problems like https://github.com/palantir/blueprint/issues/5027)
-        const hasVerticalOverflow = this.locator.hasVerticalOverflow(
+        const hasVerticalOverflowOrExactFit = this.locator.hasVerticalOverflowOrExactFit(
             enableColumnHeader ? this.columnHeaderHeight : 0,
             viewportRect,
         );
         const rowIndices = this.grid.getRowIndicesInRect({
-            includeGhostCells: hasVerticalOverflow ? false : enableGhostCells,
+            includeGhostCells: hasVerticalOverflowOrExactFit ? false : enableGhostCells,
             rect: viewportRect,
         });
 
@@ -994,23 +1059,23 @@ export class Table2 extends AbstractComponent2<Table2Props, TableState, TableSna
             return undefined;
         }
 
-        // if we have vertical/horizontal overflow, no need to render ghost rows/columns (respectively)
+        // if we have vertical/horizontal overflow or exact fit, no need to render ghost rows/columns (respectively)
         // (this avoids problems like https://github.com/palantir/blueprint/issues/5027)
-        const hasVerticalOverflow = this.locator.hasVerticalOverflow(
+        const hasVerticalOverflowOrExactFit = this.locator.hasVerticalOverflowOrExactFit(
             enableColumnHeader ? this.columnHeaderHeight : 0,
             viewportRect,
         );
-        const hasHorizontalOverflow = this.locator.hasHorizontalOverflow(
+        const hasHorizontalOverflowOrExactFit = this.locator.hasHorizontalOverflowOrExactFit(
             enableRowHeader ? this.rowHeaderWidth : 0,
             viewportRect,
         );
         const rowIndices = this.grid.getRowIndicesInRect({
-            includeGhostCells: hasVerticalOverflow ? false : enableGhostCells,
+            includeGhostCells: hasVerticalOverflowOrExactFit ? false : enableGhostCells,
             rect: viewportRect,
         });
         const columnIndices = this.grid.getColumnIndicesInRect(
             viewportRect,
-            hasHorizontalOverflow ? false : enableGhostCells,
+            hasHorizontalOverflowOrExactFit ? false : enableGhostCells,
         );
 
         // start beyond the frozen area if rendering unrelated quadrants, so we
@@ -1029,7 +1094,7 @@ export class Table2 extends AbstractComponent2<Table2Props, TableState, TableSna
 
         return (
             <div>
-                <TableBody
+                <TableBody2
                     enableMultipleSelection={enableMultipleSelection}
                     cellRenderer={this.bodyCellRenderer}
                     focusedCell={focusedCell}
@@ -1101,6 +1166,49 @@ export class Table2 extends AbstractComponent2<Table2Props, TableState, TableSna
         }
         return this.grid;
     }
+
+    /**
+     * Renders a scroll indicator overlay on top of the table body inside the quadrant stack.
+     * This component is offset by the headers and scrollbar, and it provides the overlay which
+     * we use to render automatic scrolling indicator linear gradients.
+     *
+     * @param scrollBarWidth the calculated scroll bar width to be passed in by the quadrant stack
+     * @param columnHeaderHeight the calculated column header height to be passed in by the quadrant stack
+     * @returns A jsx element which will render a linear gradient with smooth transitions based on
+     *          state of the scroll (will not render if we are already at the top/left/right/bottom)
+     *           and the state of "scroll direction"
+     */
+    private renderScrollIndicatorOverlay = (scrollBarWidth: number, columnHeaderHeight: number) => {
+        const { scrollDirection } = this.state;
+        const getStyle = (direction: ScrollDirection | null | undefined, compare: string) => {
+            return {
+                marginRight: scrollBarWidth,
+                marginTop: columnHeaderHeight,
+                opacity: direction === compare ? 1 : 0,
+            };
+        };
+        const baseClass = Classes.TABLE_BODY_SCROLLING_INDICATOR_OVERLAY;
+        return (
+            <>
+                <div
+                    className={classNames(baseClass, Classes.TABLE_BODY_IS_SCROLLING_TOP)}
+                    style={getStyle(scrollDirection, ScrollDirection.TOP)}
+                />
+                <div
+                    className={classNames(baseClass, Classes.TABLE_BODY_IS_SCROLLING_BOTTOM)}
+                    style={getStyle(scrollDirection, ScrollDirection.BOTTOM)}
+                />
+                <div
+                    className={classNames(baseClass, Classes.TABLE_BODY_IS_SCROLLING_RIGHT)}
+                    style={getStyle(scrollDirection, ScrollDirection.RIGHT)}
+                />
+                <div
+                    className={classNames(baseClass, Classes.TABLE_BODY_IS_SCROLLING_LEFT)}
+                    style={getStyle(scrollDirection, ScrollDirection.LEFT)}
+                />
+            </>
+        );
+    };
 
     /**
      * Renders a `RegionLayer`, applying styles to the regions using the

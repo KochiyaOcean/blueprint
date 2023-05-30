@@ -19,7 +19,6 @@ import * as React from "react";
 import type { IconName } from "@blueprintjs/icons";
 
 import { Intent } from "./intent";
-import { IRef } from "./refs";
 
 export const DISPLAYNAME_PREFIX = "Blueprint4";
 
@@ -66,9 +65,9 @@ export type IntentProps = IIntentProps;
  * Interface for a clickable action, such as a button or menu item.
  * These props can be spready directly to a `<Button>` or `<MenuItem>` element.
  *
- * @deprecated use ActionProps
+ * @template T type of the DOM element rendered by this component
  */
-export interface IActionProps extends IntentProps, Props {
+export interface ActionProps<T extends HTMLElement = HTMLElement> extends IntentProps, Props {
     /** Whether this action is non-interactive. */
     disabled?: boolean;
 
@@ -76,13 +75,18 @@ export interface IActionProps extends IntentProps, Props {
     icon?: IconName | MaybeElement;
 
     /** Click event handler. */
-    onClick?: (event: React.MouseEvent<HTMLElement>) => void;
+    onClick?: (event: React.MouseEvent<T>) => void;
+
+    /** Focus event handler. */
+    onFocus?: (event: React.FocusEvent<T>) => void;
 
     /** Action text. Can be any single React renderable. */
     text?: React.ReactNode;
 }
-// eslint-disable-next-line deprecation/deprecation
-export type ActionProps = IActionProps;
+/**
+ * @deprecated use ActionProps
+ */
+export type IActionProps = ActionProps;
 
 /**
  * Interface for a link, with support for customizing target window.
@@ -102,7 +106,7 @@ export type LinkProps = ILinkProps;
 /**
  * Interface for a controlled input.
  *
- * @deprecated use IControlledProps2.
+ * @deprecated use ControlledProps2.
  */
 export interface IControlledProps {
     /** Initial value of the input, for uncontrolled usage. */
@@ -129,7 +133,7 @@ export type ControlledProps2 = IControlledProps2;
  */
 export interface IElementRefProps<E extends HTMLElement> {
     /** A ref handler or a ref object that receives the native HTML element rendered by this component. */
-    elementRef?: IRef<E>;
+    elementRef?: React.Ref<E>;
 }
 
 /**
@@ -155,12 +159,13 @@ export type OptionProps = IOptionProps;
 const INVALID_PROPS = [
     "active",
     "alignText",
-    "asyncControl", // IInputGroupProps2
+    "asyncControl", // InputGroupProps2
     "containerRef",
     "current",
     "elementRef",
     "fill",
     "icon",
+    "inputClassName",
     "inputRef",
     "intent",
     "inline",
@@ -178,6 +183,7 @@ const INVALID_PROPS = [
     "rightIcon",
     "round",
     "small",
+    "tagName",
     "text",
 ];
 

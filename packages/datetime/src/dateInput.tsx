@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview This component is DEPRECATED, and the code is frozen.
+ * All changes & bugfixes should be made to DateInput2 in the datetime2
+ * package instead.
+ */
+
+/* eslint-disable deprecation/deprecation, @blueprintjs/no-deprecated-components */
+
 import classNames from "classnames";
 import * as React from "react";
 import type { DayPickerProps } from "react-day-picker";
@@ -25,7 +33,6 @@ import {
     InputGroupProps2,
     Intent,
     IPopoverProps,
-    IRef,
     Keys,
     Popover,
     Props,
@@ -37,13 +44,12 @@ import * as Classes from "./common/classes";
 import { isDateValid, isDayInRange } from "./common/dateUtils";
 import { DateFormatProps, getFormattedDateString } from "./dateFormat";
 import { DatePicker } from "./datePicker";
-import { getDefaultMaxDate, getDefaultMinDate, IDatePickerBaseProps } from "./datePickerCore";
+import { DatePickerBaseProps, getDefaultMaxDate, getDefaultMinDate } from "./datePickerCore";
 import { DatePickerShortcut } from "./shortcuts";
 
-// eslint-disable-next-line deprecation/deprecation
 export type DateInputProps = IDateInputProps;
 /** @deprecated use DateInputProps */
-export interface IDateInputProps extends IDatePickerBaseProps, DateFormatProps, Props {
+export interface IDateInputProps extends DatePickerBaseProps, DateFormatProps, Props {
     /**
      * Allows the user to clear the selection by clicking the currently selected day.
      * Passed to `DatePicker` component.
@@ -92,12 +98,14 @@ export interface IDateInputProps extends IDatePickerBaseProps, DateFormatProps, 
     inputProps?: InputGroupProps2;
 
     /**
-     * Called when the user selects a new valid date through the `DatePicker` or by typing
-     * in the input. The second argument is true if the user clicked on a date in the
-     * calendar, changed the input value, or cleared the selection; it will be false if the date
-     * was changed by choosing a new month or year.
+     * Called when the user selects a new valid date through the DatePicker or by typing
+     * in the input.
+     *
+     * @param newDate Date or `null` (if the date is invalid or text input has been cleared)
+     * @param isUserChange `true` if the user clicked on a date in the calendar, changed the input value,
+     *     or cleared the selection; `false` if the date was changed by changing the month or year.
      */
-    onChange?: (selectedDate: Date, isUserChange: boolean) => void;
+    onChange?: (selectedDate: Date | null, isUserChange: boolean) => void;
 
     /**
      * Called when the user finishes typing in a new date and the date causes an error state.
@@ -159,6 +167,12 @@ export interface IDateInputState {
     selectedShortcutIndex?: number;
 }
 
+/**
+ * Date input component.
+ *
+ * @see https://blueprintjs.com/docs/#datetime/dateinput
+ * @deprecated use { DateInput2 } from "@blueprintjs/datetime2"
+ */
 export class DateInput extends AbstractPureComponent2<DateInputProps, IDateInputState> {
     public static displayName = `${DISPLAYNAME_PREFIX}.DateInput`;
 
@@ -190,7 +204,7 @@ export class DateInput extends AbstractPureComponent2<DateInputProps, IDateInput
         this.props.inputProps?.inputRef,
     );
 
-    private handlePopoverContentRef: IRef<HTMLDivElement> = refHandler(this, "popoverContentElement");
+    private handlePopoverContentRef: React.Ref<HTMLDivElement> = refHandler(this, "popoverContentElement");
 
     public render() {
         const { value, valueString } = this.state;
@@ -228,7 +242,6 @@ export class DateInput extends AbstractPureComponent2<DateInputProps, IDateInput
         const { inputProps = {}, popoverProps = {} } = this.props;
         const isErrorState = value != null && (!isDateValid(value) || !this.isDateInRange(value));
         return (
-            /* eslint-disable-next-line deprecation/deprecation */
             <Popover
                 isOpen={this.state.isOpen && !this.props.disabled}
                 fill={this.props.fill}
@@ -256,7 +269,6 @@ export class DateInput extends AbstractPureComponent2<DateInputProps, IDateInput
                     onKeyDown={this.handleInputKeyDown}
                     value={dateString}
                 />
-                {/* eslint-disable-next-line deprecation/deprecation */}
             </Popover>
         );
     }
@@ -365,7 +377,7 @@ export class DateInput extends AbstractPureComponent2<DateInputProps, IDateInput
 
     private handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
         const { valueString } = this.state;
-        const date = this.parseDate(valueString);
+        const date: Date = this.parseDate(valueString);
         if (
             valueString.length > 0 &&
             valueString !== getFormattedDateString(this.state.value, this.props) &&
@@ -396,7 +408,6 @@ export class DateInput extends AbstractPureComponent2<DateInputProps, IDateInput
 
     private handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         // HACKHACK: https://github.com/palantir/blueprint/issues/4165
-        /* eslint-disable deprecation/deprecation */
         if (e.which === Keys.ENTER) {
             const nextDate = this.parseDate(this.state.valueString);
             this.handleDateChange(nextDate, true, true);

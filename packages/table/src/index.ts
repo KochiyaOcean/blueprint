@@ -16,37 +16,41 @@
 
 /* eslint-disable deprecation/deprecation */
 
-export { Cell, CellProps, ICellProps, ICellRenderer, CellRenderer } from "./cell/cell";
+export { Cell, type CellProps, type ICellProps, type ICellRenderer, type CellRenderer } from "./cell/cell";
 
-export { EditableCell, IEditableCellProps, EditableCellProps } from "./cell/editableCell";
+export { EditableCell, type IEditableCellProps, type EditableCellProps } from "./cell/editableCell";
 
-export { EditableCell2, EditableCell2Props } from "./cell/editableCell2";
+export { EditableCell2, type EditableCell2Props } from "./cell/editableCell2";
 
-export { JSONFormat, IJSONFormatProps, JSONFormatProps } from "./cell/formats/jsonFormat";
+export { JSONFormat, type IJSONFormatProps, type JSONFormatProps } from "./cell/formats/jsonFormat";
+
+export { JSONFormat2 } from "./cell/formats/jsonFormat2";
 
 export {
-    TruncatedPopoverMode,
     TruncatedFormat,
-    TruncatedFormatProps,
-    ITruncatedFormatProps,
+    TruncatedPopoverMode,
+    type TruncatedFormatProps,
+    type ITruncatedFormatProps,
 } from "./cell/formats/truncatedFormat";
 
-export { Column, ColumnProps, IColumnProps } from "./column";
+export { TruncatedFormat2 } from "./cell/formats/truncatedFormat2";
+
+export { Column, type ColumnProps, type IColumnProps } from "./column";
 
 export {
-    AnyRect,
-    CellCoordinates,
+    type AnyRect,
+    type CellCoordinates,
     Clipboard,
-    FocusedCellCoordinates,
+    type FocusedCellCoordinates,
     Grid,
     Rect,
     RenderMode,
     Utils,
 } from "./common/index";
 
-export { IDraggableProps, Draggable } from "./interactions/draggable";
+export { type IDraggableProps, Draggable } from "./interactions/draggable";
 
-export {
+export type {
     IClientCoordinates,
     ClientCoordinates,
     ICoordinateData,
@@ -55,40 +59,59 @@ export {
     DragHandler,
 } from "./interactions/dragTypes";
 
-export { CopyCellsMenuItem, IContextMenuRenderer, ContextMenuRenderer, IMenuContext } from "./interactions/menus";
-
-export { ILockableLayout, IResizeHandleProps, Orientation, ResizeHandle } from "./interactions/resizeHandle";
-
-export { ISelectableProps, IDragSelectableProps, DragSelectable } from "./interactions/selectable";
-
-export { ColumnHeaderRenderer, IColumnHeaderRenderer } from "./headers/columnHeader";
-
-export { RowHeaderRenderer } from "./headers/rowHeader";
-
-export { ColumnHeaderCell, IColumnHeaderCellProps, HorizontalCellDivider } from "./headers/columnHeaderCell";
-
-export { IRowHeaderCellProps, RowHeaderCell } from "./headers/rowHeaderCell";
-
-export { IEditableNameProps, EditableNameProps, EditableName } from "./headers/editableName";
+export {
+    CopyCellsMenuItem,
+    type IContextMenuRenderer,
+    type ContextMenuRenderer,
+    type IMenuContext,
+} from "./interactions/menus";
 
 export {
-    CellInterval,
-    CellCoordinate,
+    type ILockableLayout,
+    type IResizeHandleProps,
+    type Orientation,
+    ResizeHandle,
+} from "./interactions/resizeHandle";
+
+export { type ISelectableProps, type IDragSelectableProps, DragSelectable } from "./interactions/selectable";
+
+export type { ColumnHeaderRenderer, IColumnHeaderRenderer } from "./headers/columnHeader";
+
+export type { RowHeaderRenderer } from "./headers/rowHeader";
+
+export {
+    ColumnHeaderCell,
+    type ColumnHeaderCellProps,
+    type IColumnHeaderCellProps,
+    HorizontalCellDivider,
+} from "./headers/columnHeaderCell";
+
+export { ColumnHeaderCell2, type ColumnHeaderCell2Props } from "./headers/columnHeaderCell2";
+
+export { type IRowHeaderCellProps, type RowHeaderCellProps, RowHeaderCell } from "./headers/rowHeaderCell";
+
+export { RowHeaderCell2 } from "./headers/rowHeaderCell2";
+
+export { type IEditableNameProps, type EditableNameProps, EditableName } from "./headers/editableName";
+
+export {
+    type CellInterval,
+    type CellCoordinate,
     ColumnLoadingOption,
-    ICellInterval,
-    IRegion,
-    Region,
-    IStyledRegionGroup,
+    type ICellInterval,
+    type IRegion,
+    type Region,
+    type IStyledRegionGroup,
     RegionCardinality,
     Regions,
     RowLoadingOption,
     SelectionModes,
-    StyledRegionGroup,
+    type StyledRegionGroup,
     TableLoadingOption,
 } from "./regions";
 
-export { ITableProps, TableProps } from "./tableProps";
+export type { ITableProps, TableProps } from "./tableProps";
 
 export { Table } from "./table";
 
-export { Table2, Table2Props } from "./table2";
+export { Table2, type Table2Props } from "./table2";

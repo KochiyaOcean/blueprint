@@ -15,7 +15,6 @@
  */
 
 import classNames from "classnames";
-import { formatInTimeZone } from "date-fns-tz";
 import * as React from "react";
 
 import {
@@ -28,12 +27,13 @@ import {
     MenuItem,
     Props,
 } from "@blueprintjs/core";
-import type { Popover2Props } from "@blueprintjs/popover2";
-import { ItemListPredicate, ItemRenderer, Select2 } from "@blueprintjs/select";
+import { ItemListPredicate, ItemRenderer, Select2, SelectPopoverProps } from "@blueprintjs/select";
 
 import * as Classes from "../../common/classes";
+import { formatTimezone, TimezoneDisplayFormat } from "../../common/timezoneDisplayFormat";
 import { TIMEZONE_ITEMS } from "../../common/timezoneItems";
-import { getInitialTimezoneItems, mapTimezonesWithNames, TimezoneWithNames } from "../../common/timezoneNameUtils";
+import { getInitialTimezoneItems, mapTimezonesWithNames } from "../../common/timezoneNameUtils";
+import { TimezoneWithNames } from "../../common/timezoneTypes";
 
 export interface TimezoneSelectProps extends Props {
     /**
@@ -111,15 +111,26 @@ export interface TimezoneSelectProps extends Props {
     inputProps?: InputGroupProps2;
 
     /** Props to spread to `Popover2`. Note that `content` cannot be changed. */
-    popoverProps?: Partial<Omit<Popover2Props, "content">>;
+    popoverProps?: SelectPopoverProps["popoverProps"];
+
+    /**
+     * Format to use when displaying the selected (or default) timezone within the target element.
+     * This prop will be ignored if `children` is provided.
+     *
+     * @default TimezoneDisplayFormat.COMPOSITE
+     */
+    valueDisplayFormat?: TimezoneDisplayFormat;
 }
 
 export interface TimezoneSelectState {
     query: string;
 }
 
-const TypedSelect = Select2.ofType<TimezoneWithNames>();
-
+/**
+ * Timezone select component.
+ *
+ * @see https://blueprintjs.com/docs/#datetime2/timezone-select
+ */
 export class TimezoneSelect extends AbstractPureComponent2<TimezoneSelectProps, TimezoneSelectState> {
     public static displayName = `${DISPLAYNAME_PREFIX}.TimezoneSelect`;
 
@@ -151,7 +162,7 @@ export class TimezoneSelect extends AbstractPureComponent2<TimezoneSelectProps, 
         const { query } = this.state;
 
         return (
-            <TypedSelect
+            <Select2<TimezoneWithNames>
                 className={classNames(Classes.TIMEZONE_SELECT, className)}
                 disabled={disabled}
                 fill={fill}
@@ -169,12 +180,11 @@ export class TimezoneSelect extends AbstractPureComponent2<TimezoneSelectProps, 
                     ...popoverProps,
                     popoverClassName: classNames(Classes.TIMEZONE_SELECT_POPOVER, popoverProps?.popoverClassName),
                 }}
-                popoverTargetProps={{ className: Classes.TIMEZONE_SELECT_TARGET }}
                 resetOnClose={true}
                 resetOnSelect={true}
             >
                 {children ?? this.renderButton()}
-            </TypedSelect>
+            </Select2>
         );
     }
 
@@ -192,13 +202,14 @@ export class TimezoneSelect extends AbstractPureComponent2<TimezoneSelectProps, 
     }
 
     private renderButton() {
-        const { buttonProps = {}, disabled, fill, placeholder, value } = this.props;
+        const { buttonProps = {}, disabled, fill, placeholder, value, valueDisplayFormat } = this.props;
         const selectedTimezone = this.timezoneItems.find(tz => tz.ianaCode === value);
-        const buttonContent = selectedTimezone ? (
-            `${selectedTimezone.label} ${formatInTimeZone(this.props.date!, selectedTimezone.ianaCode, "xxx")}`
-        ) : (
-            <span className={CoreClasses.TEXT_MUTED}>{placeholder}</span>
-        );
+        const buttonContent =
+            selectedTimezone !== undefined ? (
+                formatTimezone(selectedTimezone, valueDisplayFormat ?? TimezoneDisplayFormat.COMPOSITE)
+            ) : (
+                <span className={CoreClasses.TEXT_MUTED}>{placeholder}</span>
+            );
         return <Button rightIcon="caret-down" disabled={disabled} text={buttonContent} fill={fill} {...buttonProps} />;
     }
 
@@ -206,7 +217,14 @@ export class TimezoneSelect extends AbstractPureComponent2<TimezoneSelectProps, 
         // using list predicate so only one RegExp instance is needed
         // escape bad regex characters, let spaces act as any separator
         const expr = new RegExp(query.replace(/([[()+*?])/g, "\\$1").replace(" ", "[ _/\\(\\)]+"), "i");
-        return items.filter(item => expr.test(item.ianaCode) || expr.test(item.label) || expr.test(item.longName));
+
+        return items.filter(
+            item =>
+                expr.test(item.ianaCode) ||
+                expr.test(item.label) ||
+                expr.test(item.longName) ||
+                expr.test(item.shortName),
+        );
     };
 
     private renderItem: ItemRenderer<TimezoneWithNames> = (item, { handleClick, modifiers }) => {
@@ -220,7 +238,6 @@ export class TimezoneSelect extends AbstractPureComponent2<TimezoneSelectProps, 
                 text={`${item.label}, ${item.longName}`}
                 onClick={handleClick}
                 label={item.shortName}
-                shouldDismissPopover={false}
             />
         );
     };

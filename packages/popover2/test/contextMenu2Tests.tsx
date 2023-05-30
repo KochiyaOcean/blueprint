@@ -18,9 +18,10 @@ import { assert } from "chai";
 import classNames from "classnames";
 import { mount, ReactWrapper } from "enzyme";
 import * as React from "react";
+import * as ReactDOM from "react-dom";
 import { spy } from "sinon";
 
-import { Classes as CoreClasses, Keys, Menu, MenuItem } from "@blueprintjs/core";
+import { Classes as CoreClasses, Drawer, Menu, MenuItem } from "@blueprintjs/core";
 
 import {
     Classes,
@@ -33,12 +34,14 @@ import {
     Tooltip2Props,
 } from "../src";
 
-const MENU_ITEMS = [
-    <MenuItem key="left" icon="align-left" text="Align Left" />,
-    <MenuItem key="center" icon="align-center" text="Align Center" />,
-    <MenuItem key="right" icon="align-right" text="Align Right" />,
-];
-const MENU = <Menu>{MENU_ITEMS}</Menu>;
+const MENU_CLASSNAME = "test-menu";
+const MENU = (
+    <Menu className={MENU_CLASSNAME}>
+        <MenuItem icon="align-left" text="Align Left" />
+        <MenuItem icon="align-center" text="Align Center" />
+        <MenuItem icon="align-right" text="Align Right" />
+    </Menu>
+);
 const TARGET_CLASSNAME = "test-target";
 const TOOLTIP_SELECTOR = `.${Classes.TOOLTIP2}`;
 const COMMON_TOOLTIP_PROPS: Partial<Tooltip2Props> = {
@@ -48,6 +51,17 @@ const COMMON_TOOLTIP_PROPS: Partial<Tooltip2Props> = {
 };
 
 describe("ContextMenu2", () => {
+    let containerElement: HTMLElement | undefined;
+
+    beforeEach(() => {
+        containerElement = document.createElement("div");
+        document.body.appendChild(containerElement);
+    });
+    afterEach(() => {
+        ReactDOM.unmountComponentAtNode(containerElement!);
+        containerElement!.remove();
+    });
+
     describe("basic usage", () => {
         it("renders children and Popover2", () => {
             const ctxMenu = mountTestMenu();
@@ -80,8 +94,8 @@ describe("ContextMenu2", () => {
                 .find(`.${CoreClasses.OVERLAY_OPEN}`)
                 .hostNodes()
                 .simulate("keydown", {
+                    key: "Escape",
                     nativeEvent: new KeyboardEvent("keydown"),
-                    which: Keys.ESCAPE,
                 });
             assert.isFalse(ctxMenu.find(Popover2).prop("isOpen"));
         });
@@ -103,11 +117,26 @@ describe("ContextMenu2", () => {
             assert.isFalse(wrapperClickSpy.called, "ctx menu wrapper click handler should not be called");
         });
 
+        it("allows overrding some Popover2 props", () => {
+            const placement = "top";
+            const popoverClassName = "test-popover-class";
+            const ctxMenu = mountTestMenu({ popoverProps: { placement, popoverClassName } });
+            openCtxMenu(ctxMenu);
+            const popoverWithTopPlacement = document.querySelector(
+                `.${popoverClassName}.${Classes.POPOVER2_CONTENT_PLACEMENT}-${placement}`,
+            );
+            assert.exists(
+                popoverWithTopPlacement,
+                `popover element with custom class '${popoverClassName}' and '${placement}' placement should exist`,
+            );
+        });
+
         function mountTestMenu(props: Partial<ContextMenu2Props> = {}) {
             return mount(
                 <ContextMenu2 content={MENU} popoverProps={{ transitionDuration: 0 }} {...props}>
                     <div className={TARGET_CLASSNAME} />
                 </ContextMenu2>,
+                { attachTo: containerElement },
             );
         }
     });
@@ -158,6 +187,45 @@ describe("ContextMenu2", () => {
                         </div>
                     )}
                 </ContextMenu2>,
+                { attachTo: containerElement },
+            );
+        }
+    });
+
+    describe("advanced usage (content render function API)", () => {
+        it("renders children and menu content, prevents default context menu handler", done => {
+            const onContextMenu = (e: React.MouseEvent) => {
+                assert.isTrue(e.defaultPrevented);
+                done();
+            };
+            const ctxMenu = mountTestMenu({ onContextMenu });
+            assert.isTrue(ctxMenu.find(`.${TARGET_CLASSNAME}`).exists());
+            openCtxMenu(ctxMenu);
+            assert.isTrue(ctxMenu.find(`.${MENU_CLASSNAME}`).exists());
+        });
+
+        it("triggers native context menu if content function returns undefined", done => {
+            const onContextMenu = (e: React.MouseEvent) => {
+                assert.isFalse(e.defaultPrevented);
+                done();
+            };
+            const ctxMenu = mountTestMenu({
+                content: () => undefined,
+                onContextMenu,
+            });
+            openCtxMenu(ctxMenu);
+        });
+
+        function renderContent() {
+            return MENU;
+        }
+
+        function mountTestMenu(props?: Partial<ContextMenu2Props>) {
+            return mount(
+                <ContextMenu2 content={renderContent} popoverProps={{ transitionDuration: 0 }} {...props}>
+                    <div className={TARGET_CLASSNAME} />
+                </ContextMenu2>,
+                { attachTo: containerElement },
             );
         }
     });
@@ -178,6 +246,7 @@ describe("ContextMenu2", () => {
                 ctxMenuPopover.hasClass(CoreClasses.DARK),
                 "ContextMenu2 popover should be open WITH dark theme applied",
             );
+            closeCtxMenu(wrapper);
         });
 
         it("detects theme change (dark -> light)", () => {
@@ -196,6 +265,7 @@ describe("ContextMenu2", () => {
                 ctxMenuPopover.hasClass(CoreClasses.DARK),
                 "ContextMenu2 popover should be open WITHOUT dark theme applied",
             );
+            closeCtxMenu(wrapper);
         });
     });
 
@@ -430,20 +500,50 @@ describe("ContextMenu2", () => {
             });
         });
 
+        describe("with Drawer as parent content", () => {
+            it("positions correctly", () => {
+                const POPOVER_CLASSNAME = "test-positions-popover";
+                const wrapper = mount(
+                    <Drawer isOpen={true} position="right" transitionDuration={0}>
+                        <ContextMenu2
+                            content={MENU}
+                            className="test-ctx-menu"
+                            popoverProps={{ transitionDuration: 0, popoverClassName: POPOVER_CLASSNAME }}
+                            style={{ padding: 20, background: "red" }}
+                        >
+                            <div className={TARGET_CLASSNAME} style={{ width: 20, height: 20, background: "blue" }} />
+                        </ContextMenu2>
+                    </Drawer>,
+                    { attachTo: containerElement },
+                );
+                const target = wrapper.find(`.${TARGET_CLASSNAME}`).hostNodes();
+                assert.isTrue(target.exists(), "target should exist");
+                const nonExistentPopover = wrapper.find(`.${POPOVER_CLASSNAME}`).hostNodes();
+                assert.isFalse(
+                    nonExistentPopover.exists(),
+                    "ContextMenu2 popover should not be open before triggering contextmenu event",
+                );
+
+                const targetRect = target.getDOMNode().getBoundingClientRect();
+                // right click on the target
+                const simulateArgs = {
+                    clientX: targetRect.left + targetRect.width / 2,
+                    clientY: targetRect.top + targetRect.height / 2,
+                    x: targetRect.left + targetRect.width / 2,
+                    y: targetRect.top + targetRect.height / 2,
+                };
+                target.simulate("contextmenu", simulateArgs);
+                const popover = wrapper.find(`.${POPOVER_CLASSNAME}`).hostNodes();
+                assert.isTrue(popover.exists(), "ContextMenu2 popover should be open");
+            });
+        });
+
         function openTooltip(wrapper: ReactWrapper, targetClassName = TARGET_CLASSNAME) {
             const target = wrapper.find(`.${targetClassName}`);
             if (!target.exists()) {
                 assert.fail("tooltip target not found in mounted test case");
             }
             target.hostNodes().closest(`.${Classes.POPOVER2_TARGET}`).simulate("mouseenter");
-        }
-
-        function closeCtxMenu(wrapper: ReactWrapper) {
-            const backdrop = wrapper.find(`.${Classes.CONTEXT_MENU2_BACKDROP}`);
-            if (backdrop.exists()) {
-                backdrop.simulate("click");
-                wrapper.update();
-            }
         }
     });
 
@@ -457,6 +557,14 @@ describe("ContextMenu2", () => {
             .hostNodes()
             .simulate("contextmenu", { defaultPrevented: false, clientX: clientLeft + 10, clientY: clientTop + 10 })
             .update();
+    }
+
+    function closeCtxMenu(wrapper: ReactWrapper) {
+        const backdrop = wrapper.find(`.${Classes.CONTEXT_MENU2_BACKDROP}`);
+        if (backdrop.exists()) {
+            backdrop.simulate("mousedown");
+            wrapper.update();
+        }
     }
 
     function renderClickedInfo(targetOffset: ContextMenu2ContentProps["targetOffset"]) {

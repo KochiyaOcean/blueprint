@@ -105,7 +105,7 @@ points (".") without the component eagerly coercing those strings to their parse
 equivalents (`0.` becomes `0`, fractional data entry impossible).
 
 Exceptions to this rule may occur if your input only supports _positive integers_, which will not
-have any non-numeric characters. See the [precision section](#core/components/numeric-input.precision)
+have any non-numeric characters. See the [precision section](#core/components/numeric-input.numeric-precision)
 to learn how to enforce this kind of constraint.
 
 <div class="@ns-callout @ns-intent-warning @ns-icon-warning-sign">
@@ -127,8 +127,11 @@ component with support for mathematical expressions as follows:
 import { NumericInput } from "@blueprintjs/core";
 import * as SomeLibrary from "some-library";
 
-export class NumericInputExample extends React.Component<{}, { value?: number |
-string }> {
+interface NumericInputExampleState = {
+    value?: number | string;
+}
+
+class NumericInputExample extends React.Component<{}, NumericInputExampleState> {
     public state = { value: NumericInput.VALUE_EMPTY };
 
     public render() {

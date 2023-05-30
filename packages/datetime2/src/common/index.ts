@@ -14,6 +14,16 @@
  * limitations under the License.
  */
 
-import * as classes from "../common/classes";
+import * as Classes from "./classes";
+import * as DateUtils from "./dateUtils";
+import { TimezoneWithNames } from "./timezoneTypes";
 
-export const Classes = classes;
+/** @deprecated use `TimezoneWithNames` */
+type TimezoneMetadata = TimezoneWithNames;
+
+// eslint-disable-next-line deprecation/deprecation
+export { Classes, DateUtils, TimezoneWithNames, TimezoneMetadata };
+
+export { DateRange, NonNullDateRange } from "./dateRange";
+export { TimezoneDisplayFormat } from "./timezoneDisplayFormat";
+export { getTimezoneMetadata } from "./timezoneMetadata";

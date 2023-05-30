@@ -23,21 +23,22 @@ import {
     H5,
     HTMLSelect,
     Intent,
-    IToasterProps,
-    IToastProps,
     Label,
     NumericInput,
+    OverlayToaster,
+    OverlayToasterProps,
     Position,
     ProgressBar,
     Switch,
-    Toaster,
+    ToasterInstance,
     ToasterPosition,
+    ToastProps,
 } from "@blueprintjs/core";
-import { Example, handleBooleanChange, handleValueChange, IExampleProps } from "@blueprintjs/docs-theme";
+import { Example, ExampleProps, handleBooleanChange, handleValueChange } from "@blueprintjs/docs-theme";
 
 import { IBlueprintExampleData } from "../../tags/types";
 
-type IToastDemo = IToastProps & { button: string };
+type IToastDemo = ToastProps & { button: string };
 
 const POSITIONS = [
     Position.TOP_LEFT,
@@ -48,8 +49,8 @@ const POSITIONS = [
     Position.BOTTOM_RIGHT,
 ];
 
-export class ToastExample extends React.PureComponent<IExampleProps<IBlueprintExampleData>, IToasterProps> {
-    public state: IToasterProps = {
+export class ToastExample extends React.PureComponent<ExampleProps<IBlueprintExampleData>, OverlayToasterProps> {
+    public state: OverlayToasterProps = {
         autoFocus: false,
         canEscapeKeyClear: true,
         position: Position.TOP,
@@ -108,12 +109,28 @@ export class ToastExample extends React.PureComponent<IExampleProps<IBlueprintEx
             intent: Intent.WARNING,
             message: "Goodbye, old friend.",
         },
+        {
+            action: {
+                onClick: () =>
+                    this.addToast({
+                        icon: "ban-circle",
+                        intent: Intent.DANGER,
+                        message: "You can't cancel what's been done!",
+                    }),
+                text: "Cancel",
+            },
+            button: "Start loading",
+            icon: "hand",
+            intent: Intent.PRIMARY,
+            isCloseButtonShown: false,
+            message: "Loading...",
+        },
     ];
 
-    private toaster: Toaster;
+    private toaster: ToasterInstance;
 
     private refHandlers = {
-        toaster: (ref: Toaster) => (this.toaster = ref),
+        toaster: (ref: ToasterInstance) => (this.toaster = ref),
     };
 
     private progressToastInterval?: number;
@@ -131,7 +148,7 @@ export class ToastExample extends React.PureComponent<IExampleProps<IBlueprintEx
             <Example options={this.renderOptions()} {...this.props}>
                 {this.TOAST_BUILDERS.map(this.renderToastDemo, this)}
                 <Button onClick={this.handleProgressToast} text="Upload file" />
-                <Toaster {...this.state} ref={this.refHandlers.toaster} />
+                <OverlayToaster {...this.state} ref={this.refHandlers.toaster} />
             </Example>
         );
     }
@@ -166,7 +183,7 @@ export class ToastExample extends React.PureComponent<IExampleProps<IBlueprintEx
         return <Button intent={toast.intent} key={index} text={toast.button} onClick={() => this.addToast(toast)} />;
     };
 
-    private renderProgress(amount: number): IToastProps {
+    private renderProgress(amount: number): ToastProps {
         return {
             className: this.props.data.themeName,
             icon: "cloud-upload",
@@ -189,7 +206,7 @@ export class ToastExample extends React.PureComponent<IExampleProps<IBlueprintEx
         };
     }
 
-    private addToast(toast: IToastProps) {
+    private addToast(toast: ToastProps) {
         toast.className = this.props.data.themeName;
         toast.timeout = 5000;
         this.toaster.show(toast);

@@ -32,7 +32,6 @@ const ruleTester = new TSESLint.RuleTester({
     },
 });
 
-console.info("Testing no-deprecated-components rule...");
 ruleTester.run("no-deprecated-components", noDeprecatedComponentsRule, {
     invalid: [
         {
@@ -42,7 +41,10 @@ ruleTester.run("no-deprecated-components", noDeprecatedComponentsRule, {
                 return <CollapsibleList />
             `,
             errors: [
-                { messageId: "nonDeprecated", data: { deprecated: "CollapsibleList", nonDeprecated: "OverflowList" } },
+                {
+                    messageId: "migration",
+                    data: { deprecatedComponentName: "CollapsibleList", newComponentName: "OverflowList" },
+                },
             ],
         },
         {
@@ -52,7 +54,10 @@ ruleTester.run("no-deprecated-components", noDeprecatedComponentsRule, {
                 return <BP.CollapsibleList />
             `,
             errors: [
-                { messageId: "nonDeprecated", data: { deprecated: "CollapsibleList", nonDeprecated: "OverflowList" } },
+                {
+                    messageId: "migration",
+                    data: { deprecatedComponentName: "CollapsibleList", newComponentName: "OverflowList" },
+                },
             ],
         },
         {
@@ -64,8 +69,8 @@ ruleTester.run("no-deprecated-components", noDeprecatedComponentsRule, {
             `,
             errors: [
                 {
-                    messageId: "nonDeprecated",
-                    data: { deprecated: "AbstractComponent", nonDeprecated: "AbstractComponent2" },
+                    messageId: "migration",
+                    data: { deprecatedComponentName: "AbstractComponent", newComponentName: "AbstractComponent2" },
                 },
             ],
         },
@@ -79,12 +84,38 @@ ruleTester.run("no-deprecated-components", noDeprecatedComponentsRule, {
             `,
             errors: [
                 {
-                    messageId: "nonDeprecated",
-                    data: { deprecated: "AbstractComponent", nonDeprecated: "AbstractComponent2" },
+                    messageId: "migration",
+                    data: { deprecatedComponentName: "AbstractComponent", newComponentName: "AbstractComponent2" },
                 },
                 {
-                    messageId: "nonDeprecated",
-                    data: { deprecated: "AbstractComponent", nonDeprecated: "AbstractComponent2" },
+                    messageId: "migration",
+                    data: { deprecatedComponentName: "AbstractComponent", newComponentName: "AbstractComponent2" },
+                },
+            ],
+        },
+        {
+            code: dedent`
+                import { TimezonePicker } from "@blueprintjs/timezone";
+
+                return <TimezonePicker />;
+            `,
+            errors: [
+                {
+                    messageId: "migration",
+                    data: { deprecatedComponentName: "TimezonePicker", newComponentName: "TimezoneSelect" },
+                },
+            ],
+        },
+        {
+            code: dedent`
+                import { KeyCombo } from "@blueprintjs/core";
+
+                return <KeyCombo />;
+            `,
+            errors: [
+                {
+                    messageId: "migration",
+                    data: { deprecatedComponentName: "KeyCombo", newComponentName: "KeyComboTag" },
                 },
             ],
         },

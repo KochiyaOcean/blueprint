@@ -40,9 +40,16 @@ export function dispatchTestKeyboardEventWithCode(
     keyCode: number,
     shift = false,
 ) {
-    const event = document.createEvent("KeyboardEvent");
-    (event as any).initKeyboardEvent(eventType, true, true, window, key, 0, false, false, shift);
-
+    const event = new KeyboardEvent(eventType, {
+        altKey: false,
+        bubbles: true,
+        cancelable: true,
+        ctrlKey: false,
+        key,
+        location: 0,
+        shiftKey: shift,
+        view: window,
+    });
     // Hack around these readonly properties in WebKit and Chrome
     if (detectBrowser() === Browser.WEBKIT) {
         (event as any).key = key;
@@ -101,10 +108,9 @@ function detectBrowser() {
 // see http://stackoverflow.com/questions/16802795/click-not-working-in-mocha-phantomjs-on-certain-elements
 // tl;dr PhantomJS sucks so we have to manually create click events
 export function createMouseEvent(eventType = "click", clientX = 0, clientY = 0) {
-    const event = document.createEvent("MouseEvent");
-
-    // https://developer.mozilla.org/en-US/docs/Web/API/UIEvent/detail
+    // see https://developer.mozilla.org/en-US/docs/Web/API/UIEvent/detail
     let detailArg = 0;
+
     switch (eventType) {
         case "click":
         case "dblclick":
@@ -116,25 +122,16 @@ export function createMouseEvent(eventType = "click", clientX = 0, clientY = 0) 
             break;
     }
 
-    // HACKHACK: see https://github.com/palantir/blueprint/issues/5173
-    // eslint-disable-next-line deprecation/deprecation
-    event.initMouseEvent(
-        eventType,
-        true /* bubble */,
-        true /* cancelable */,
-        window /* viewArg */,
-        detailArg,
-        0,
-        0,
+    const event = new MouseEvent(eventType, {
+        bubbles: true,
+        button: 0,
+        cancelable: true,
         clientX,
-        clientY /* coordinates */,
-        false,
-        false,
-        false,
-        false /* modifier keys */,
-        0 /* left */,
-        null,
-    );
+        clientY,
+        detail: detailArg,
+        view: window,
+    });
+
     return event;
 }
 

@@ -15,29 +15,30 @@
  */
 
 import { assert } from "chai";
-import { mount } from "enzyme";
+import { HTMLAttributes, mount, ReactWrapper } from "enzyme";
 import * as React from "react";
 import * as sinon from "sinon";
 
-import { InputGroup, Keys, MenuItem } from "@blueprintjs/core";
-import { Popover2 } from "@blueprintjs/popover2";
+import { Button, Classes as CoreClasses, InputGroup, Keys, MenuItem } from "@blueprintjs/core";
+import { MenuItem2, Popover2 } from "@blueprintjs/popover2";
 
-import { IFilm, renderFilm, TOP_100_FILMS } from "../../docs-app/src/common/films";
-import { IItemRendererProps, Select2, Select2Props, Select2State } from "../src";
+import { ItemRendererProps, Select2, Select2Props, Select2State } from "../src";
+import { Film, renderFilm, TOP_100_FILMS } from "../src/__examples__";
 import { selectComponentSuite } from "./selectComponentSuite";
+import { selectPopoverTestSuite } from "./selectPopoverTestSuite";
 
 describe("<Select2>", () => {
-    const FilmSelect = Select2.ofType<IFilm>();
     const defaultProps = {
         items: TOP_100_FILMS,
         popoverProps: { isOpen: true, usePortal: false },
         query: "",
     };
     let handlers: {
-        itemPredicate: sinon.SinonSpy<[string, IFilm], boolean>;
-        itemRenderer: sinon.SinonSpy<[IFilm, IItemRendererProps], JSX.Element | null>;
+        itemPredicate: sinon.SinonSpy<[string, Film], boolean>;
+        itemRenderer: sinon.SinonSpy<[Film, ItemRendererProps], JSX.Element | null>;
         onItemSelect: sinon.SinonSpy;
     };
+    let testsContainerElement: HTMLElement | undefined;
 
     beforeEach(() => {
         handlers = {
@@ -45,16 +46,23 @@ describe("<Select2>", () => {
             itemRenderer: sinon.spy(renderFilm),
             onItemSelect: sinon.spy(),
         };
+        testsContainerElement = document.createElement("div");
+        document.body.appendChild(testsContainerElement);
     });
 
     afterEach(() => {
         for (const spy of Object.values(handlers)) {
             spy.resetHistory();
         }
+        testsContainerElement?.remove();
     });
 
-    selectComponentSuite<Select2Props<IFilm>, Select2State>(props =>
+    selectComponentSuite<Select2Props<Film>, Select2State>(props =>
         mount(<Select2 {...props} popoverProps={{ isOpen: true, usePortal: false }} />),
+    );
+
+    selectPopoverTestSuite<Select2Props<Film>, Select2State>(props =>
+        mount(<Select2 {...props} />, { attachTo: testsContainerElement }),
     );
 
     it("renders a Popover2 around children that contains InputGroup and items", () => {
@@ -86,6 +94,7 @@ describe("<Select2>", () => {
 
     it("inputProps value and onChange are ignored", () => {
         const inputProps = { value: "nailed it", onChange: sinon.spy() };
+        // @ts-expect-error - value and onChange are now omitted from the props type
         const input = select({ inputProps }).find("input");
         assert.notEqual(input.prop("onChange"), inputProps.onChange);
         assert.notEqual(input.prop("value"), inputProps.value);
@@ -96,7 +105,7 @@ describe("<Select2>", () => {
         const onOpening = sinon.spy();
         const modifiers = {}; // our own instance
         const wrapper = select({ popoverProps: { onOpening, modifiers } });
-        wrapper.find("[data-testid='target-button']").simulate("click");
+        findTargetButton(wrapper).simulate("click");
         assert.strictEqual(wrapper.find(Popover2).prop("modifiers"), modifiers);
         assert.isTrue(onOpening.calledOnce);
     });
@@ -107,31 +116,122 @@ describe("<Select2>", () => {
         const wrapper = select({ popoverProps: { usePortal: false } });
         // should be closed to start
         assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), false);
-        wrapper.find("[data-testid='target-button']").simulate("keydown", { which: Keys.ARROW_DOWN });
+        findTargetButton(wrapper).simulate("keydown", { which: Keys.ARROW_DOWN });
         // ...then open after key down
         assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), true);
     });
 
-    // HACKHACK: see https://github.com/palantir/blueprint/issues/5364
-    it.skip("invokes onItemSelect when clicking first MenuItem", () => {
+    it("invokes onItemSelect when clicking first MenuItem", () => {
         const wrapper = select();
-        wrapper.find(Popover2).find(MenuItem).first().simulate("click");
+        // N.B. need to trigger interaction on nested <a> element, where item onClick is actually attached to the DOM
+        wrapper.find(Popover2).find(MenuItem2).first().find("a").simulate("click");
         assert.isTrue(handlers.onItemSelect.calledOnce);
     });
 
-    function select(props: Partial<Select2Props<IFilm>> = {}, query?: string) {
+    it("closes Popover2 after selecting active item with the Enter key", () => {
+        // override isOpen in defaultProps so that the popover can actually be closed
+        const wrapper = select({
+            popoverProps: { usePortal: true },
+        });
+        findTargetButton(wrapper).simulate("click");
+        wrapper.find("input").simulate("keydown", { keyCode: Keys.ENTER });
+        wrapper.find("input").simulate("keyup", { keyCode: Keys.ENTER });
+        assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), false);
+    });
+
+    // N.B. it's not worth refactoring these tests to be DRY since there will soon
+    // only be 1 MenuItem component in Blueprint v5
+
+    it("closes the popover when selecting first MenuItem", () => {
+        const itemRenderer = (film: Film) => {
+            return <MenuItem text={`${film.rank}. ${film.title}`} shouldDismissPopover={true} />;
+        };
+        const wrapper = select({ itemRenderer, popoverProps: { usePortal: false } });
+
+        // popover should start close
+        assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), false);
+
+        // popover should open after clicking the button
+        findTargetButton(wrapper).simulate("click");
+        assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), true);
+
+        // and should close after the a menu item is clicked
+        wrapper.find(Popover2).find(`.${CoreClasses.MENU_ITEM}`).first().simulate("click");
+        assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), false);
+    });
+
+    it("does not close the popover when selecting a MenuItem with shouldDismissPopover", () => {
+        const itemRenderer = (film: Film) => {
+            return <MenuItem text={`${film.rank}. ${film.title}`} shouldDismissPopover={false} />;
+        };
+        const wrapper = select({ itemRenderer, popoverProps: { usePortal: false } });
+
+        // popover should start closed
+        assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), false);
+
+        // popover should open after clicking the button
+        findTargetButton(wrapper).simulate("click");
+        assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), true);
+
+        // and should not close after the a menu item is clicked
+        wrapper.find(Popover2).find(`.${CoreClasses.MENU_ITEM}`).first().simulate("click");
+        assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), true);
+    });
+
+    it("closes the popover when selecting first MenuItem2", () => {
+        const itemRenderer = (film: Film) => {
+            return <MenuItem2 text={`${film.rank}. ${film.title}`} shouldDismissPopover={true} />;
+        };
+        const wrapper = select({ itemRenderer, popoverProps: { usePortal: false } });
+
+        // popover should start close
+        assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), false);
+
+        // popover should open after clicking the button
+        findTargetButton(wrapper).simulate("click");
+        assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), true);
+
+        // and should close after the a menu item is clicked
+        wrapper.find(Popover2).find(`.${CoreClasses.MENU_ITEM}`).first().simulate("click");
+        assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), false);
+    });
+
+    it("does not close the popover when selecting a MenuItem2 with shouldDismissPopover", () => {
+        const itemRenderer = (film: Film) => {
+            return <MenuItem2 text={`${film.rank}. ${film.title}`} shouldDismissPopover={false} />;
+        };
+        const wrapper = select({ itemRenderer, popoverProps: { usePortal: false } });
+
+        // popover should start closed
+        assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), false);
+
+        // popover should open after clicking the button
+        findTargetButton(wrapper).simulate("click");
+        assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), true);
+
+        // and should not close after the a menu item is clicked
+        wrapper.find(Popover2).find(`.${CoreClasses.MENU_ITEM}`).first().simulate("click");
+        assert.strictEqual(wrapper.find(Popover2).prop("isOpen"), true);
+    });
+
+    function select(props: Partial<Select2Props<Film>> = {}, query?: string) {
         const wrapper = mount(
-            <FilmSelect {...defaultProps} {...handlers} {...props}>
-                <button data-testid="target-button">Target</button>
-            </FilmSelect>,
+            <Select2<Film> {...defaultProps} {...handlers} {...props}>
+                <Button data-testid="target-button" text="Target" />
+            </Select2>,
+            { attachTo: testsContainerElement },
         );
         if (query !== undefined) {
             wrapper.setState({ query });
         }
         return wrapper;
     }
+
+    function findTargetButton(wrapper: ReactWrapper): ReactWrapper<HTMLAttributes> {
+        return wrapper.find("[data-testid='target-button']").hostNodes();
+    }
 });
 
-function filterByYear(query: string, film: IFilm) {
+function filterByYear(query: string, film: Film) {
     return query === "" || film.year.toString() === query;
 }

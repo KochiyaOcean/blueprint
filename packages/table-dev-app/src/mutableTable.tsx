@@ -38,24 +38,26 @@ import {
 import {
     Cell,
     Column,
-    ColumnHeaderCell,
+    ColumnHeaderCell2,
+    CopyCellsMenuItem,
     EditableCell2,
     EditableName,
-    JSONFormat,
+    FocusedCellCoordinates,
+    JSONFormat2,
     Region,
     RegionCardinality,
     Regions,
-    RowHeaderCell,
+    RenderMode,
+    RowHeaderCell2,
     StyledRegionGroup,
     Table2,
     TableLoadingOption,
-    TruncatedFormat,
+    TruncatedFormat2,
     TruncatedPopoverMode,
     Utils,
 } from "@blueprintjs/table";
-import type { IFocusedCellCoordinates } from "@blueprintjs/table/src/common/cellTypes";
+import { IMenuContext } from "@blueprintjs/table/src";
 import type { ColumnIndices, RowIndices } from "@blueprintjs/table/src/common/grid";
-import { RenderMode } from "@blueprintjs/table/src/common/renderMode";
 
 import { DenseGridMutableStore } from "./denseGridMutableStore";
 import { LocalStore } from "./localStore";
@@ -200,9 +202,9 @@ function getRandomString(length: number): string {
     let str = "";
     while (str.length < length) {
         const part = Math.random().toString(36);
-        str += part.substring(2, part.length - 1);
+        str += part.substring(2);
     }
-    return str.substring(0, length - 1);
+    return str.substring(0);
 }
 
 function contains(arr: any[], value: any) {
@@ -243,6 +245,7 @@ export interface IMutableTableState {
     enableRowResizing?: boolean;
     enableRowSelection?: boolean;
     enableSlowLayout?: boolean;
+    enableScrollingApi?: boolean;
     numCols?: number;
     numFrozenCols?: number;
     numFrozenRows?: number;
@@ -290,6 +293,7 @@ const DEFAULT_STATE: IMutableTableState = {
     enableRowReordering: false,
     enableRowResizing: false,
     enableRowSelection: true,
+    enableScrollingApi: false,
     enableSlowLayout: false,
     numCols: COLUMN_COUNTS[COLUMN_COUNT_DEFAULT_INDEX],
     numFrozenCols: FROZEN_COLUMN_COUNTS[FROZEN_COLUMN_COUNT_DEFAULT_INDEX],
@@ -321,10 +325,19 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
 
     private tableInstance: Table2;
 
+    private tableWrapperRef: HTMLDivElement;
+
     private stateStore: LocalStore<IMutableTableState>;
+
+    private scrollDirection: "UP" | "DOWN";
+
+    private animationRequestId: number;
+
+    private previousTime: number;
 
     private refHandlers = {
         table: (ref: Table2) => (this.tableInstance = ref),
+        tableWrapperRef: (ref: HTMLDivElement) => (this.tableWrapperRef = ref),
     };
 
     // eslint-disable-next-line @typescript-eslint/ban-types
@@ -348,8 +361,13 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
                         rootClassName={classNames("table", { "is-inline": this.state.showInline })}
                         branchClassName="layout-passthrough-fill"
                     >
-                        <div className={layoutBoundary ? "layout-boundary" : "layout-passthrough-fill"}>
-                            {this.renderTable()}
+                        <div
+                            className={layoutBoundary ? "layout-boundary" : "layout-passthrough-fill"}
+                            ref={this.refHandlers.tableWrapperRef}
+                            onMouseOver={event => this.checkScrolling(event)}
+                            onMouseLeave={this.cancelAnimation}
+                        >
+                            {this.renderTable()};
                         </div>
                     </SlowLayoutStack>
                     {this.renderSidebar()}
@@ -388,6 +406,54 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
 
     private generateColumnKey = () => {
         return Math.random().toString(36).substring(7);
+    };
+
+    private animate = (time: number) => {
+        this.previousTime = this.previousTime ?? time;
+        if (this.tableInstance) {
+            const deltaTime = time - this.previousTime;
+            if (deltaTime > 100) {
+                if (this.scrollDirection === "UP") {
+                    this.tableInstance.scrollByOffset({ left: 0, top: -10 });
+                } else {
+                    this.tableInstance.scrollByOffset({ left: 0, top: +10 });
+                }
+                this.previousTime = (this.previousTime ?? 0) + 100;
+            }
+        }
+        this.animationRequestId = requestAnimationFrame(this.animate);
+    };
+
+    private cancelAnimation = () => {
+        cancelAnimationFrame(this.animationRequestId);
+        this.animationRequestId = undefined;
+        this.previousTime = undefined;
+        this.tableInstance.scrollByOffset(null);
+    };
+
+    private checkScrolling = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        if (!this.state.enableScrollingApi) {
+            return;
+        }
+        const top = this.tableWrapperRef.getBoundingClientRect().top;
+        const bottom = this.tableWrapperRef.getBoundingClientRect().bottom;
+        const scrollAbove = top + 0.3 * (bottom - top);
+        const scrollBelow = bottom - 0.3 * (bottom - top);
+        const pos = event.clientY;
+
+        if (pos < scrollAbove && pos > top) {
+            this.scrollDirection = "UP";
+            if (this.animationRequestId === undefined) {
+                requestAnimationFrame(this.animate);
+            }
+        } else if (pos > scrollBelow && pos < bottom) {
+            this.scrollDirection = "DOWN";
+            if (this.animationRequestId === undefined) {
+                requestAnimationFrame(this.animate);
+            }
+        } else {
+            this.cancelAnimation();
+        }
     };
 
     // Renderers
@@ -449,7 +515,7 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
 
     private renderColumnHeaderCell = (columnIndex: number) => {
         return (
-            <ColumnHeaderCell
+            <ColumnHeaderCell2
                 index={columnIndex}
                 name={this.store.getColumnName(columnIndex)}
                 menuRenderer={this.state.showColumnMenus ? this.renderColumnMenu : undefined}
@@ -520,7 +586,7 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
     };
 
     private renderRowHeader = (rowIndex: number) => {
-        return <RowHeaderCell index={rowIndex} name={`${rowIndex + 1}`} menuRenderer={this.renderRowMenu} />;
+        return <RowHeaderCell2 index={rowIndex} name={`${rowIndex + 1}`} menuRenderer={this.renderRowMenu} />;
     };
 
     private renderRowMenu = (rowIndex: number) => {
@@ -582,20 +648,20 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
         } else if (this.state.cellContent === CellContent.LARGE_JSON) {
             return (
                 <Cell className={classes} wrapText={this.state.enableCellWrap}>
-                    <JSONFormat
+                    <JSONFormat2
                         detectTruncation={this.state.enableCellTruncation}
                         preformatted={true}
                         showPopover={this.state.cellTruncatedPopoverMode}
                         truncateLength={1e10}
                     >
                         {valueAsString}
-                    </JSONFormat>
+                    </JSONFormat2>
                 </Cell>
             );
         } else if (this.state.enableCellTruncation) {
             return (
                 <Cell className={classes} wrapText={this.state.enableCellWrap}>
-                    <TruncatedFormat
+                    <TruncatedFormat2
                         detectTruncation={!this.state.enableCellTruncationFixed}
                         preformatted={false}
                         showPopover={this.state.cellTruncatedPopoverMode}
@@ -603,7 +669,7 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
                         truncationSuffix="..."
                     >
                         {valueAsString}
-                    </TruncatedFormat>
+                    </TruncatedFormat2>
                 </Cell>
             );
         } else {
@@ -683,6 +749,7 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
                 {this.renderSwitch("Callback logs", "showCallbackLogs")}
                 {this.renderSwitch("Full-table selection", "enableFullTableSelection")}
                 {this.renderSwitch("Multi-selection", "enableMultiSelection")}
+                {this.renderSwitch("Demo programmatic scrolling API", "enableScrollingApi")}
                 {selectedRegionTransformPresetMenu}
                 <H6>Scroll to</H6>
                 {this.renderScrollToSection()}
@@ -921,7 +988,7 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
         this.maybeLogCallback(`[onRowHeightChanged] index = ${index} size = ${size}`);
     };
 
-    private onFocus = (focusedCell: IFocusedCellCoordinates) => {
+    private onFocus = (focusedCell: FocusedCellCoordinates) => {
         this.maybeLogCallback("[onFocusedCell] focusedCell =", focusedCell);
     };
 
@@ -1044,9 +1111,10 @@ export class MutableTable extends React.Component<{}, IMutableTableState> {
         return handleStringChange(value => this.setState({ [stateKey]: value }));
     };
 
-    private renderBodyContextMenu = () => {
+    private renderBodyContextMenu = (context: IMenuContext) => {
         const menu = (
             <Menu>
+                <CopyCellsMenuItem context={context} icon="clipboard" getCellData={this.getCellValue} text="Copy" />
                 <MenuItem icon="search-around" text="Item 1" />
                 <MenuItem icon="search" text="Item 2" />
                 <MenuItem icon="graph-remove" text="Item 3" />

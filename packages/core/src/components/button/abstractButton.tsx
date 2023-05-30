@@ -30,11 +30,21 @@ import {
 import { Icon, IconName, IconSize } from "../icon/icon";
 import { Spinner } from "../spinner/spinner";
 
-// eslint-disable-next-line deprecation/deprecation
-export type ButtonProps<E extends HTMLButtonElement | HTMLAnchorElement = HTMLButtonElement> = IButtonProps<E>;
 /** @deprecated use ButtonProps */
-export interface IButtonProps<E extends HTMLButtonElement | HTMLAnchorElement = HTMLButtonElement>
-    extends ActionProps,
+export type IButtonProps<E extends HTMLButtonElement | HTMLAnchorElement = HTMLButtonElement> = ButtonProps<E>;
+
+/**
+ * Props interface for both the Button and AnchorButton components.
+ *
+ * Note that it is useful for the props for the two components to be assignable to each other, which we can allow
+ * by omitting the `elementRef` prop as `DialogStepButton` does. This is mostly for backwards compatibility, but it is
+ * a feature we like to preserve because the components are so similar and distinguishing between them in their event
+ * handlers is usually unnecessary. For this reason, we extend `ActionProps<HTMLElement>` rather than `ActionProps<E>`.
+ *
+ * @see {@link ActionProps}
+ */
+export interface ButtonProps<E extends HTMLButtonElement | HTMLAnchorElement = HTMLButtonElement>
+    extends ActionProps<HTMLElement>,
         // eslint-disable-next-line deprecation/deprecation
         IElementRefProps<E> {
     /**
@@ -65,8 +75,9 @@ export interface IButtonProps<E extends HTMLButtonElement | HTMLAnchorElement = 
     large?: boolean;
 
     /**
-     * If set to `true`, the button will display a centered loading spinner instead of its contents, and the button will be disabled.
-     * The width of the button is not affected by the value of this prop.
+     * If set to `true`, the button will display a centered loading spinner instead of its contents
+     * and the button will be disabled (_even if_ `disabled={false}`). The width of the button is
+     * not affected by the value of this prop.
      *
      * @default false
      */
@@ -120,8 +131,18 @@ export abstract class AbstractButton<E extends HTMLButtonElement | HTMLAnchorEle
     public abstract render(): JSX.Element;
 
     protected getCommonButtonProps() {
-        const { active, alignText, fill, large, loading = false, outlined, minimal, small, tabIndex } = this.props;
-        const disabled = this.props.disabled ?? loading;
+        const {
+            active = false,
+            alignText,
+            fill,
+            large,
+            loading = false,
+            outlined,
+            minimal,
+            small,
+            tabIndex,
+        } = this.props;
+        const disabled = this.props.disabled || loading;
 
         const className = classNames(
             Classes.BUTTON,
@@ -145,6 +166,7 @@ export abstract class AbstractButton<E extends HTMLButtonElement | HTMLAnchorEle
             disabled,
             onBlur: this.handleBlur,
             onClick: disabled ? undefined : this.props.onClick,
+            onFocus: disabled ? undefined : this.props.onFocus,
             onKeyDown: this.handleKeyDown,
             onKeyUp: this.handleKeyUp,
             tabIndex: disabled ? -1 : tabIndex,
@@ -191,8 +213,7 @@ export abstract class AbstractButton<E extends HTMLButtonElement | HTMLAnchorEle
         const maybeHasText = !Utils.isReactNodeEmpty(text) || !Utils.isReactNodeEmpty(children);
         return [
             loading && <Spinner key="loading" className={Classes.BUTTON_SPINNER} size={IconSize.LARGE} />,
-            // The icon is purely decorative if text is provided
-            <Icon key="leftIcon" icon={icon} aria-hidden={maybeHasText} tabIndex={maybeHasText ? -1 : undefined} />,
+            <Icon key="leftIcon" icon={icon} />,
             maybeHasText && (
                 <span key="text" className={Classes.BUTTON_TEXT}>
                     {text}

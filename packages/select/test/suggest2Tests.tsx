@@ -19,27 +19,28 @@ import { mount, ReactWrapper } from "enzyme";
 import * as React from "react";
 import * as sinon from "sinon";
 
-import { InputGroup, Keys, MenuItem } from "@blueprintjs/core";
-import { Popover2, Popover2Props } from "@blueprintjs/popover2";
+import { InputGroup, Keys } from "@blueprintjs/core";
+import { MenuItem2, Popover2, Popover2Props } from "@blueprintjs/popover2";
 
-import { IFilm, renderFilm, TOP_100_FILMS } from "../../docs-app/src/common/films";
-import { IItemRendererProps, QueryList } from "../src";
+import { ItemRendererProps, QueryList } from "../src";
+import { Film, renderFilm, TOP_100_FILMS } from "../src/__examples__";
 import { Suggest2, Suggest2Props, Suggest2State } from "../src/components/suggest/suggest2";
 import { selectComponentSuite } from "./selectComponentSuite";
+import { selectPopoverTestSuite } from "./selectPopoverTestSuite";
 
 describe("Suggest2", () => {
-    const FilmSuggest = Suggest2.ofType<IFilm>();
     const defaultProps = {
         items: TOP_100_FILMS,
         popoverProps: { isOpen: true, usePortal: false },
         query: "",
     };
     let handlers: {
-        inputValueRenderer: sinon.SinonSpy<[IFilm], string>;
-        itemPredicate: sinon.SinonSpy<[string, IFilm], boolean>;
-        itemRenderer: sinon.SinonSpy<[IFilm, IItemRendererProps], JSX.Element | null>;
+        inputValueRenderer: sinon.SinonSpy<[Film], string>;
+        itemPredicate: sinon.SinonSpy<[string, Film], boolean>;
+        itemRenderer: sinon.SinonSpy<[Film, ItemRendererProps], JSX.Element | null>;
         onItemSelect: sinon.SinonSpy;
     };
+    let testsContainerElement: HTMLElement | undefined;
 
     beforeEach(() => {
         handlers = {
@@ -48,9 +49,15 @@ describe("Suggest2", () => {
             itemRenderer: sinon.spy(renderFilm),
             onItemSelect: sinon.spy(),
         };
+        testsContainerElement = document.createElement("div");
+        document.body.appendChild(testsContainerElement);
     });
 
-    selectComponentSuite<Suggest2Props<IFilm>, Suggest2State<IFilm>>(props =>
+    afterEach(() => {
+        testsContainerElement?.remove();
+    });
+
+    selectComponentSuite<Suggest2Props<Film>, Suggest2State<Film>>(props =>
         mount(
             <Suggest2
                 {...props}
@@ -60,6 +67,10 @@ describe("Suggest2", () => {
         ),
     );
 
+    selectPopoverTestSuite<Suggest2Props<Film>, Suggest2State<Film>>(props =>
+        mount(<Suggest2 {...props} inputValueRenderer={inputValueRenderer} />, { attachTo: testsContainerElement }),
+    );
+
     describe("Basic behavior", () => {
         it("renders an input that triggers a popover containing items", () => {
             const wrapper = suggest();
@@ -67,7 +78,7 @@ describe("Suggest2", () => {
             const popover = wrapper.find(Popover2);
             assert.lengthOf(wrapper.find(InputGroup), 1, "should render InputGroup");
             assert.lengthOf(popover, 1, "should render Popover2");
-            assert.lengthOf(popover.find(MenuItem), 100, "should render 100 items in popover");
+            assert.lengthOf(popover.find(MenuItem2), 100, "should render 100 items in popover");
         });
 
         describe("when ESCAPE key pressed", () => {
@@ -94,7 +105,7 @@ describe("Suggest2", () => {
 
         it("scrolls active item into view when popover opens", () => {
             const wrapper = suggest();
-            const queryList = (wrapper.instance() as Suggest2<IFilm> as any).queryList; // private ref
+            const queryList = (wrapper.instance() as Suggest2<Film> as any).queryList; // private ref
             const scrollActiveItemIntoViewSpy = sinon.spy(queryList, "scrollActiveItemIntoView");
             wrapper.setState({ isOpen: false });
             assert.isFalse(scrollActiveItemIntoViewSpy.called);
@@ -108,7 +119,7 @@ describe("Suggest2", () => {
                 popoverProps: { transitionDuration: 5 },
                 selectedItem: TOP_100_FILMS[10],
             });
-            const queryList = (wrapper.instance() as Suggest2<IFilm> as any).queryList as QueryList<IFilm>; // private ref
+            const queryList = (wrapper.instance() as Suggest2<Film> as any).queryList as QueryList<Film>; // private ref
 
             assert.deepEqual(
                 queryList.state.activeItem,
@@ -183,6 +194,7 @@ describe("Suggest2", () => {
             const value = "nailed it";
             const onChange = sinon.spy();
 
+            // @ts-expect-error - value and onChange are now omitted from the props type
             const input = suggest({ inputProps: { value, onChange } }).find("input");
             assert.notStrictEqual(input.prop("onChange"), onChange);
             assert.notStrictEqual(input.prop("value"), value);
@@ -327,16 +339,12 @@ describe("Suggest2", () => {
         });
     });
 
-    function suggest(props: Partial<Suggest2Props<IFilm>> = {}, query?: string) {
-        const wrapper = mount<typeof FilmSuggest>(<FilmSuggest {...defaultProps} {...handlers} {...props} />);
-        if (query !== undefined) {
-            wrapper.setState({ query });
-        }
-        return wrapper;
+    function suggest(props: Partial<Suggest2Props<Film>> = {}) {
+        return mount<Suggest2<Film>>(<Suggest2<Film> {...defaultProps} {...handlers} {...props} />);
     }
 });
 
-function filterByYear(query: string, film: IFilm) {
+function filterByYear(query: string, film: Film) {
     return query === "" || film.year.toString() === query;
 }
 
@@ -344,7 +352,7 @@ function selectItem(wrapper: ReactWrapper<any, any>, index: number) {
     wrapper.find("a").at(index).simulate("click");
 }
 
-function inputValueRenderer(item: IFilm) {
+function inputValueRenderer(item: Film) {
     return item.title;
 }
 

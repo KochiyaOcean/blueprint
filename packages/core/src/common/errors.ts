@@ -85,12 +85,16 @@ export const POPOVER_WARN_PLACEMENT_AND_POSITION_MUTEX =
 export const POPOVER_WARN_UNCONTROLLED_ONINTERACTION = ns + ` <Popover> onInteraction is ignored when uncontrolled.`;
 
 export const PORTAL_CONTEXT_CLASS_NAME_STRING = ns + ` <Portal> context blueprintPortalClassName must be string`;
+export const PORTAL_LEGACY_CONTEXT_API =
+    ns + ` setting blueprintPortalClassName via legacy React context API is deprecated, use <PortalProvider> instead.`;
 
 export const RADIOGROUP_WARN_CHILDREN_OPTIONS_MUTEX =
     ns + ` <RadioGroup> children and options prop are mutually exclusive, with options taking priority.`;
 
 export const SLIDER_ZERO_STEP = ns + ` <Slider> stepSize must be greater than zero.`;
 export const SLIDER_ZERO_LABEL_STEP = ns + ` <Slider> labelStepSize must be greater than zero.`;
+export const SLIDER_MIN = ns + ` <Slider> min prop must be a finite number.`;
+export const SLIDER_MAX = ns + ` <Slider> max prop must be a finite number.`;
 export const RANGESLIDER_NULL_VALUE = ns + ` <RangeSlider> value prop must be an array of two non-null numbers.`;
 export const MULTISLIDER_INVALID_CHILD = ns + ` <MultiSlider> children must be <SliderHandle>s or <SliderTrackStop>s`;
 export const MULTISLIDER_WARN_LABEL_STEP_SIZE_LABEL_VALUES_MUTEX =
@@ -101,9 +105,12 @@ export const SPINNER_WARN_CLASSES_SIZE = ns + ` <Spinner> Classes.SMALL/LARGE ar
 
 export const TOASTER_CREATE_NULL =
     ns +
-    ` Toaster.create() is not supported inside React lifecycle methods in React 16.` +
+    ` OverlayToaster.create() is not supported inside React lifecycle methods in React 16.` +
     ` See usage example on the docs site.`;
-export const TOASTER_WARN_INLINE = ns + ` Toaster.create() ignores inline prop as it always creates a new element.`;
+export const TOASTER_MAX_TOASTS_INVALID =
+    ns + ` <OverlayToaster> maxToasts is set to an invalid number, must be greater than 0`;
+export const TOASTER_WARN_INLINE =
+    ns + ` OverlayToaster.create() ignores inline prop as it always creates a new element.`;
 
 export const DIALOG_WARN_NO_HEADER_ICON = ns + ` <Dialog> iconName is ignored if title is omitted.`;
 export const DIALOG_WARN_NO_HEADER_CLOSE_BUTTON =
@@ -111,6 +118,3 @@ export const DIALOG_WARN_NO_HEADER_CLOSE_BUTTON =
 
 export const DRAWER_ANGLE_POSITIONS_ARE_CASTED =
     ns + ` <Drawer> all angle positions are casted into pure position (TOP, BOTTOM, LEFT or RIGHT)`;
-
-export const TOASTER_MAX_TOASTS_INVALID =
-    ns + ` <Toaster> maxToasts is set to an invalid number, must be greater than 0`;
