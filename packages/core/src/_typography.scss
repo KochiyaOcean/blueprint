@@ -265,6 +265,7 @@ Styleguide preformatted
   min-width: $pt-button-height-small;
   padding: $pt-border-radius ($pt-border-radius * 2);
   vertical-align: middle;
+  background: rgba($white, 0.9);
 
   #{$icon-classes} {
     margin-right: $pt-grid-size * 0.5;

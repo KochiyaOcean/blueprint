@@ -6,8 +6,8 @@
 $card-padding: $pt-grid-size * 2 !default;
 $card-padding-compact: $pt-grid-size * 1.5 !default;
 
-$card-background-color: $white !default;
-$dark-card-background-color: $dark-gray3 !default;
+$card-background-color: rgba($white, 0.6) !default;
+$dark-card-background-color: rgba($dark-gray3, 0.6) !default;
 
 $card-list-border-width: 1px !default;
 
