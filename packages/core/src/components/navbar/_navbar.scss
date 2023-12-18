@@ -6,8 +6,8 @@
 
 $navbar-padding: $pt-spacing * 4 !default;
 
-$navbar-background-color: $card-background-color !default;
-$dark-navbar-background-color: $dark-card-background-color !default;
+$navbar-background-color: rgba($card-background-color, 0.9) !default;
+$dark-navbar-background-color: rgba($dark-card-background-color, 0.9) !default;
 
 .#{$ns}-navbar {
   background-color: $navbar-background-color;

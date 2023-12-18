@@ -283,6 +283,7 @@ Styleguide preformatted
   min-width: $pt-button-height-small;
   padding: ($pt-spacing * 0.5) $pt-spacing;
   vertical-align: middle;
+  background: rgba($white, 0.9);
 
   #{$icon-classes} {
     margin-right: $pt-spacing;

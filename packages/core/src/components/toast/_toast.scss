@@ -123,7 +123,7 @@ $toast-intent-colors: (
     $after: "~ &"
   );
   align-items: flex-start;
-  background-color: $white;
+  background-color: rgba($white, 0.9);
   border-radius: $pt-border-radius;
   box-shadow: $pt-toast-box-shadow;
   display: flex;

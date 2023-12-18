@@ -29,7 +29,7 @@ $menu-item-padding-vertical-small: $pt-spacing * 0.5 !default;
 $menu-item-selected-icon-spacing: $pt-spacing * 0.5;
 $menu-item-indent: $pt-icon-size-standard + $menu-item-selected-icon-spacing * 2;
 
-$menu-background-color: $white !default;
+$menu-background-color: rgba($white, 0.9) !default;
 $dark-menu-background-color: $dark-gray3 !default;
 
 $menu-item-color-hover: rgba($gray3, 0.15) !default;
