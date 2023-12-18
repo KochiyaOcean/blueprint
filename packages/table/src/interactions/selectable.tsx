@@ -16,25 +16,24 @@
 
 import * as React from "react";
 
-import { Utils as CoreUtils } from "@blueprintjs/core";
+import { Utils as CoreUtils, DISPLAYNAME_PREFIX } from "@blueprintjs/core";
 
 import type { FocusedCellCoordinates } from "../common/cellTypes";
-import * as FocusedCellUtils from "../common/internal/focusedCellUtils";
+import * as DefaultFocusedCellUtils from "../common/internal/focusedCellUtils";
 import * as PlatformUtils from "../common/internal/platformUtils";
 import { Utils } from "../common/utils";
-import { Region, Regions } from "../regions";
+import { type Region, Regions } from "../regions";
 import { DragEvents } from "./dragEvents";
-import { Draggable, IDraggableProps } from "./draggable";
-import { ICoordinateData } from "./dragTypes";
+import { Draggable } from "./draggable";
+import type { CoordinateData, DraggableChildrenProps, DragHandler } from "./dragTypes";
 
-export type ISelectedRegionTransform = (
+export type SelectedRegionTransform = (
     region: Region,
     event: MouseEvent | KeyboardEvent,
-    coords?: ICoordinateData,
+    coords?: CoordinateData,
 ) => Region;
-export type SelectedRegionTransform = ISelectedRegionTransform;
 
-export interface ISelectableProps {
+export interface SelectableProps {
     /**
      * If `false`, only a single region of a single column/row/cell may be
      * selected at one time. Using `ctrl` or `meta` key will have no effect,
@@ -48,6 +47,14 @@ export interface ISelectableProps {
      * The currently focused cell.
      */
     focusedCell?: FocusedCellCoordinates;
+
+    /**
+     * Focused cell coordinate & region utility functions. Exposed as a prop for testing purposes.
+     * These custom properties will be merged with the default util implementations.
+     *
+     * @internal
+     */
+    focusedCellUtils?: Partial<typeof DefaultFocusedCellUtils>;
 
     /**
      * When the user focuses something, this callback is called with new
@@ -85,13 +92,10 @@ export interface ISelectableProps {
      * `Region`s while maintaining the existing multi-select and meta-click
      * functionality.
      */
-    selectedRegionTransform?: ISelectedRegionTransform;
+    selectedRegionTransform?: SelectedRegionTransform;
 }
 
-export interface IDragSelectableProps extends ISelectableProps {
-    /** Element to make interactive. */
-    children?: React.ReactNode;
-
+export interface DragSelectableProps extends SelectableProps, DraggableChildrenProps {
     /**
      * A list of CSS selectors that should _not_ trigger selection when a `mousedown` occurs inside of them.
      */
@@ -115,30 +119,39 @@ export interface IDragSelectableProps extends ISelectableProps {
      * coordinate data representing a drag. If no valid region can be found,
      * `null` may be returned.
      */
-    locateDrag: (event: MouseEvent, coords: ICoordinateData, returnEndOnly?: boolean) => Region | undefined;
+    locateDrag: (event: MouseEvent, coords: CoordinateData, returnEndOnly?: boolean) => Region | undefined;
 }
 
-export class DragSelectable extends React.PureComponent<IDragSelectableProps> {
-    public static defaultProps: Partial<IDragSelectableProps> = {
+export class DragSelectable extends React.PureComponent<DragSelectableProps> {
+    public static defaultProps: Partial<DragSelectableProps> = {
         disabled: false,
         enableMultipleSelection: false,
         selectedRegions: [],
     };
+
+    public static displayName = `${DISPLAYNAME_PREFIX}.DragSelectable`;
+
+    private get focusedCellUtils() {
+        return {
+            ...DefaultFocusedCellUtils,
+            ...this.props.focusedCellUtils,
+        };
+    }
 
     private didExpandSelectionOnActivate = false;
 
     private lastEmittedSelectedRegions: Region[] | null = null;
 
     public render() {
-        const draggableProps = this.getDraggableProps();
+        const draggableProps = this.getDraggableHandlers();
         return (
-            <Draggable {...draggableProps} preventDefault={false}>
+            <Draggable {...draggableProps} preventDefault={false} targetRef={this.props.targetRef}>
                 {this.props.children}
             </Draggable>
         );
     }
 
-    private getDraggableProps(): IDraggableProps {
+    private getDraggableHandlers(): DragHandler {
         return this.props.onSelection == null
             ? {}
             : {
@@ -190,7 +203,7 @@ export class DragSelectable extends React.PureComponent<IDragSelectableProps> {
         return true;
     };
 
-    private handleDragMove = (event: MouseEvent, coords: ICoordinateData) => {
+    private handleDragMove = (event: MouseEvent, coords: CoordinateData) => {
         const {
             enableMultipleSelection,
             focusedCell,
@@ -343,7 +356,7 @@ export class DragSelectable extends React.PureComponent<IDragSelectableProps> {
     private invokeOnFocusCallbackForRegion = (focusRegion: Region, focusSelectionIndex = 0) => {
         const { onFocusedCell } = this.props;
         const focusedCellCoords = Regions.getFocusCellCoordinatesFromRegion(focusRegion);
-        onFocusedCell(FocusedCellUtils.toFullCoordinates(focusedCellCoords, focusSelectionIndex));
+        onFocusedCell(this.focusedCellUtils.toFullCoordinates(focusedCellCoords, focusSelectionIndex));
     };
 
     // Other
@@ -364,7 +377,7 @@ export class DragSelectable extends React.PureComponent<IDragSelectableProps> {
         if (regions.length === 0) {
             return [region];
         } else if (focusedCell != null) {
-            const expandedRegion = FocusedCellUtils.expandFocusedRegion(focusedCell, region);
+            const expandedRegion = this.focusedCellUtils.expandFocusedRegion(focusedCell, region);
             return Regions.update(regions, expandedRegion);
         } else {
             const expandedRegion = Regions.expandRegion(regions[regions.length - 1], region);

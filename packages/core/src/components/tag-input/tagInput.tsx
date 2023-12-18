@@ -17,11 +17,19 @@
 import classNames from "classnames";
 import * as React from "react";
 
-import { AbstractPureComponent2, Classes, Keys, refHandler, setRef, Utils } from "../../common";
-import { DISPLAYNAME_PREFIX, HTMLInputProps, IntentProps, MaybeElement, Props } from "../../common/props";
+import { type IconName, IconSize } from "@blueprintjs/icons";
+
+import { AbstractPureComponent, Classes, refHandler, setRef, Utils } from "../../common";
+import {
+    DISPLAYNAME_PREFIX,
+    type HTMLInputProps,
+    type IntentProps,
+    type MaybeElement,
+    type Props,
+} from "../../common/props";
 import { getActiveElement } from "../../common/utils";
-import { Icon, IconName, IconSize } from "../icon/icon";
-import { Tag, TagProps } from "../tag/tag";
+import { Icon } from "../icon/icon";
+import { Tag, type TagProps } from "../tag/tag";
 import { ResizableInput } from "./resizableInput";
 
 /**
@@ -34,10 +42,7 @@ import { ResizableInput } from "./resizableInput";
  */
 export type TagInputAddMethod = "default" | "blur" | "paste";
 
-// eslint-disable-next-line deprecation/deprecation
-export type TagInputProps = ITagInputProps;
-/** @deprecated use TagInputProps */
-export interface ITagInputProps extends IntentProps, Props {
+export interface TagInputProps extends IntentProps, Props {
     /**
      * If true, `onAdd` will be invoked when the input loses focus.
      * Otherwise, `onAdd` is only invoked when `enter` is pressed.
@@ -198,7 +203,7 @@ export interface ITagInputProps extends IntentProps, Props {
     values: readonly React.ReactNode[];
 }
 
-export interface ITagInputState {
+export interface TagInputState {
     activeIndex: number;
     inputValue: string;
     isInputFocused: boolean;
@@ -213,7 +218,7 @@ const NONE = -1;
  *
  * @see https://blueprintjs.com/docs/#core/components/tag-input
  */
-export class TagInput extends AbstractPureComponent2<TagInputProps, ITagInputState> {
+export class TagInput extends AbstractPureComponent<TagInputProps, TagInputState> {
     public static displayName = `${DISPLAYNAME_PREFIX}.TagInput`;
 
     public static defaultProps: Partial<TagInputProps> = {
@@ -227,8 +232,8 @@ export class TagInput extends AbstractPureComponent2<TagInputProps, ITagInputSta
 
     public static getDerivedStateFromProps(
         props: Readonly<TagInputProps>,
-        state: Readonly<ITagInputState>,
-    ): Partial<ITagInputState> | null {
+        state: Readonly<TagInputState>,
+    ): Partial<TagInputState> | null {
         if (props.inputValue !== state.prevInputValueProp) {
             return {
                 inputValue: props.inputValue,
@@ -238,7 +243,7 @@ export class TagInput extends AbstractPureComponent2<TagInputProps, ITagInputSta
         return null;
     }
 
-    public state: ITagInputState = {
+    public state: TagInputState = {
         activeIndex: NONE,
         inputValue: this.props.inputValue || "",
         isInputFocused: false,
@@ -410,29 +415,26 @@ export class TagInput extends AbstractPureComponent2<TagInputProps, ITagInputSta
     };
 
     private handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-        // HACKHACK: https://github.com/palantir/blueprint/issues/4165
-        /* eslint-disable deprecation/deprecation */
-
         const { selectionEnd, value } = event.currentTarget;
         const { activeIndex } = this.state;
 
         let activeIndexToEmit = activeIndex;
 
-        if (event.which === Keys.ENTER && value.length > 0) {
+        if (event.key === "Enter" && value.length > 0) {
             this.addTags(value, "default");
         } else if (selectionEnd === 0 && this.props.values.length > 0) {
             // cursor at beginning of input allows interaction with tags.
             // use selectionEnd to verify cursor position and no text selection.
-            if (event.which === Keys.ARROW_LEFT || event.which === Keys.ARROW_RIGHT) {
-                const nextActiveIndex = this.getNextActiveIndex(event.which === Keys.ARROW_RIGHT ? 1 : -1);
+            if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+                const nextActiveIndex = this.getNextActiveIndex(event.key === "ArrowRight" ? 1 : -1);
                 if (nextActiveIndex !== activeIndex) {
                     event.stopPropagation();
                     activeIndexToEmit = nextActiveIndex;
                     this.setState({ activeIndex: nextActiveIndex });
                 }
-            } else if (event.which === Keys.BACKSPACE) {
+            } else if (event.key === "Backspace") {
                 this.handleBackspaceToRemove(event);
-            } else if (event.which === Keys.DELETE) {
+            } else if (event.key === "Delete") {
                 this.handleDeleteToRemove(event);
             }
         }

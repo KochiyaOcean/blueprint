@@ -19,10 +19,10 @@ import type { FocusedCellCoordinates } from "./common/cellTypes";
 import { Clipboard } from "./common/clipboard";
 import { Direction } from "./common/direction";
 import { TABLE_COPY_FAILED } from "./common/errors";
-import { Grid } from "./common/grid";
+import type { Grid } from "./common/grid";
 import * as FocusedCellUtils from "./common/internal/focusedCellUtils";
 import * as SelectionUtils from "./common/internal/selectionUtils";
-import { NonNullRegion, Region, RegionCardinality, Regions } from "./regions";
+import { type NonNullRegion, type Region, RegionCardinality, Regions } from "./regions";
 import type { TableProps } from "./tableProps";
 import type { TableSnapshot, TableState } from "./tableState";
 
@@ -36,7 +36,11 @@ export interface TableHandlers {
 export class TableHotkeys {
     private grid?: Grid;
 
-    public constructor(private props: TableProps, private state: TableState, private tableHandlers: TableHandlers) {
+    public constructor(
+        private props: TableProps,
+        private state: TableState,
+        private tableHandlers: TableHandlers,
+    ) {
         // no-op
     }
 

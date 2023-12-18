@@ -14,16 +14,20 @@
  * limitations under the License.
  */
 
+// HACKHACK: workaround to satisfy TS compiler, we need a direct type reference to be able to infer TSESLint.RuleModule
+// @ts-expect-error
+import type { TSESLint } from "@typescript-eslint/utils";
+
 import { classesConstantsRule } from "./classes-constants";
 import { htmlComponentsRule } from "./html-components";
 import { iconComponentsRule } from "./icon-components";
 import {
     noDeprecatedComponentsRule,
     noDeprecatedCoreComponentsRule,
+    noDeprecatedDatetime2ComponentsRule,
     noDeprecatedDatetimeComponentsRule,
     noDeprecatedSelectComponentsRule,
     noDeprecatedTableComponentsRule,
-    noDeprecatedTimezoneComponentsRule,
 } from "./no-deprecated-components";
 import { noDeprecatedTypeReferencesRule } from "./no-deprecated-type-references";
 
@@ -35,8 +39,8 @@ export default {
     "no-deprecated-components": noDeprecatedComponentsRule,
     "no-deprecated-core-components": noDeprecatedCoreComponentsRule,
     "no-deprecated-datetime-components": noDeprecatedDatetimeComponentsRule,
+    "no-deprecated-datetime2-components": noDeprecatedDatetime2ComponentsRule,
     "no-deprecated-select-components": noDeprecatedSelectComponentsRule,
     "no-deprecated-table-components": noDeprecatedTableComponentsRule,
-    "no-deprecated-timezone-components": noDeprecatedTimezoneComponentsRule,
     "no-deprecated-type-references": noDeprecatedTypeReferencesRule,
 };

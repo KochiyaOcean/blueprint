@@ -16,20 +16,20 @@
 
 import * as React from "react";
 
-import { H5, Intent, Label, Slider, Spinner, SpinnerSize, Switch } from "@blueprintjs/core";
-import { Example, ExampleProps, handleBooleanChange } from "@blueprintjs/docs-theme";
+import { H5, type Intent, Label, Slider, Spinner, SpinnerSize, Switch } from "@blueprintjs/core";
+import { Example, type ExampleProps, handleBooleanChange } from "@blueprintjs/docs-theme";
 
 import { IntentSelect } from "./common/intentSelect";
 
-export interface ISpinnerExampleState {
+export interface SpinnerExampleState {
     hasValue: boolean;
     intent?: Intent;
     size: number;
     value: number;
 }
 
-export class SpinnerExample extends React.PureComponent<ExampleProps, ISpinnerExampleState> {
-    public state: ISpinnerExampleState = {
+export class SpinnerExample extends React.PureComponent<ExampleProps, SpinnerExampleState> {
+    public state: SpinnerExampleState = {
         hasValue: false,
         size: SpinnerSize.STANDARD,
         value: 0.7,

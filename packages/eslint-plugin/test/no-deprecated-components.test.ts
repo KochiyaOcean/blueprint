@@ -17,12 +17,12 @@
 // tslint:disable object-literal-sort-keys
 /* eslint-disable no-template-curly-in-string */
 
-import { TSESLint } from "@typescript-eslint/utils";
+import { RuleTester } from "@typescript-eslint/rule-tester";
 import dedent from "dedent";
 
 import { noDeprecatedComponentsRule } from "../src/rules/no-deprecated-components";
 
-const ruleTester = new TSESLint.RuleTester({
+const ruleTester = new RuleTester({
     parser: require.resolve("@typescript-eslint/parser"),
     parserOptions: {
         ecmaFeatures: {
@@ -33,93 +33,7 @@ const ruleTester = new TSESLint.RuleTester({
 });
 
 ruleTester.run("no-deprecated-components", noDeprecatedComponentsRule, {
-    invalid: [
-        {
-            code: dedent`
-                import { CollapsibleList } from "@blueprintjs/core";
-
-                return <CollapsibleList />
-            `,
-            errors: [
-                {
-                    messageId: "migration",
-                    data: { deprecatedComponentName: "CollapsibleList", newComponentName: "OverflowList" },
-                },
-            ],
-        },
-        {
-            code: dedent`
-                import * as BP from "@blueprintjs/core";
-
-                return <BP.CollapsibleList />
-            `,
-            errors: [
-                {
-                    messageId: "migration",
-                    data: { deprecatedComponentName: "CollapsibleList", newComponentName: "OverflowList" },
-                },
-            ],
-        },
-        {
-            code: dedent`
-                import { AbstractComponent } from "@blueprintjs/core";
-
-                export class MyClass extends AbstractComponent {
-                }
-            `,
-            errors: [
-                {
-                    messageId: "migration",
-                    data: { deprecatedComponentName: "AbstractComponent", newComponentName: "AbstractComponent2" },
-                },
-            ],
-        },
-        {
-            code: dedent`
-                import * as BP from "@blueprintjs/core";
-
-                export class MyClass extends BP.AbstractComponent {
-                }
-                class MyClass2 extends BP.AbstractComponent {}
-            `,
-            errors: [
-                {
-                    messageId: "migration",
-                    data: { deprecatedComponentName: "AbstractComponent", newComponentName: "AbstractComponent2" },
-                },
-                {
-                    messageId: "migration",
-                    data: { deprecatedComponentName: "AbstractComponent", newComponentName: "AbstractComponent2" },
-                },
-            ],
-        },
-        {
-            code: dedent`
-                import { TimezonePicker } from "@blueprintjs/timezone";
-
-                return <TimezonePicker />;
-            `,
-            errors: [
-                {
-                    messageId: "migration",
-                    data: { deprecatedComponentName: "TimezonePicker", newComponentName: "TimezoneSelect" },
-                },
-            ],
-        },
-        {
-            code: dedent`
-                import { KeyCombo } from "@blueprintjs/core";
-
-                return <KeyCombo />;
-            `,
-            errors: [
-                {
-                    messageId: "migration",
-                    data: { deprecatedComponentName: "KeyCombo", newComponentName: "KeyComboTag" },
-                },
-            ],
-        },
-    ],
+    invalid: [],
     valid: [
         {
             code: dedent`
@@ -147,6 +61,37 @@ ruleTester.run("no-deprecated-components", noDeprecatedComponentsRule, {
                 import * as BP from "@blueprintjs/core";
 
                 return <BP.Button />
+            `,
+        },
+        {
+            code: dedent`
+                import { CollapsibleList } from "@blueprintjs/core";
+
+                return <CollapsibleList />
+            `,
+        },
+        {
+            code: dedent`
+                import * as BP from "@blueprintjs/core";
+
+                return <BP.CollapsibleList />
+            `,
+        },
+        {
+            code: dedent`
+                import { AbstractComponent } from "@blueprintjs/core";
+
+                export class MyClass extends AbstractComponent {
+                }
+            `,
+        },
+        {
+            code: dedent`
+                import * as BP from "@blueprintjs/core";
+
+                export class MyClass extends BP.AbstractComponent {
+                }
+                class MyClass2 extends BP.AbstractComponent {}
             `,
         },
     ],

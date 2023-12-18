@@ -16,14 +16,14 @@
 
 import * as React from "react";
 
-import { Classes, EditableText, FormGroup, H1, H5, Intent, NumericInput, Switch } from "@blueprintjs/core";
-import { Example, ExampleProps, handleBooleanChange } from "@blueprintjs/docs-theme";
+import { Classes, EditableText, FormGroup, H1, H5, type Intent, NumericInput, Switch } from "@blueprintjs/core";
+import { Example, type ExampleProps, handleBooleanChange } from "@blueprintjs/docs-theme";
 
 import { IntentSelect } from "./common/intentSelect";
 
 const INPUT_ID = "EditableTextExample-max-length";
 
-export interface IEditableTextExampleState {
+export interface EditableTextExampleState {
     alwaysRenderInput?: boolean;
     confirmOnEnterKey?: boolean;
     disabled?: boolean;
@@ -33,8 +33,8 @@ export interface IEditableTextExampleState {
     selectAllOnFocus?: boolean;
 }
 
-export class EditableTextExample extends React.PureComponent<ExampleProps, IEditableTextExampleState> {
-    public state: IEditableTextExampleState = {
+export class EditableTextExample extends React.PureComponent<ExampleProps, EditableTextExampleState> {
+    public state: EditableTextExampleState = {
         alwaysRenderInput: false,
         confirmOnEnterKey: false,
         disabled: false,

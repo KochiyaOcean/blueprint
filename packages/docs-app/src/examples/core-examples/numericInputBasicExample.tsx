@@ -17,28 +17,29 @@ import * as React from "react";
 
 import {
     Button,
+    Divider,
+    FormGroup,
     H5,
     HTMLSelect,
     Intent,
-    Label,
     Menu,
     MenuItem,
     NumericInput,
-    NumericInputProps,
-    OptionProps,
+    type NumericInputProps,
+    type OptionProps,
+    Popover,
     Position,
     Switch,
 } from "@blueprintjs/core";
 import {
     Example,
-    ExampleProps,
+    type ExampleProps,
     handleBooleanChange,
     handleNumberChange,
     handleStringChange,
     handleValueChange,
 } from "@blueprintjs/docs-theme";
 import { IconNames } from "@blueprintjs/icons";
-import { Popover2 } from "@blueprintjs/popover2";
 
 import { IntentSelect } from "./common/intentSelect";
 import { LOCALES } from "./common/locales";
@@ -92,7 +93,9 @@ export class NumericInputBasicExample extends React.PureComponent<ExampleProps, 
         this.setState({ buttonPosition }),
     );
 
-    private handleLocaleChange = handleStringChange(locale => this.setState({ locale }));
+    private handleLocaleChange = handleStringChange(locale =>
+        this.setState({ locale: locale === "default" ? undefined : locale }),
+    );
 
     private toggleDisabled = handleBooleanChange(disabled => this.setState({ disabled }));
 
@@ -107,7 +110,7 @@ export class NumericInputBasicExample extends React.PureComponent<ExampleProps, 
     private toggleLeftElement = handleBooleanChange(leftElement =>
         this.setState({
             leftElement: leftElement ? (
-                <Popover2
+                <Popover
                     position="bottom"
                     content={
                         <Menu>
@@ -118,7 +121,7 @@ export class NumericInputBasicExample extends React.PureComponent<ExampleProps, 
                     }
                 >
                     <Button minimal={true} icon={IconNames.Filter} />
-                </Popover2>
+                </Popover>
             ) : undefined,
         }),
     );
@@ -173,6 +176,7 @@ export class NumericInputBasicExample extends React.PureComponent<ExampleProps, 
                 {this.renderSwitch("Numeric characters only", allowNumericCharactersOnly, this.toggleNumericCharsOnly)}
                 {this.renderSwitch("Select all on focus", selectAllOnFocus, this.toggleSelectAllOnFocus)}
                 {this.renderSwitch("Select all on increment", selectAllOnIncrement, this.toggleSelectAllOnIncrement)}
+                <Divider />
                 {this.renderSelectMenu("Minimum value", min, MIN_VALUES, this.handleMinChange)}
                 {this.renderSelectMenu("Maximum value", max, MAX_VALUES, this.handleMaxChange)}
                 {this.renderSelectMenu(
@@ -185,7 +189,7 @@ export class NumericInputBasicExample extends React.PureComponent<ExampleProps, 
                 {this.renderSelectMenu(
                     "Locale",
                     locale,
-                    [{ label: "Default", value: undefined }, ...LOCALES],
+                    [{ label: "Default", value: "default" }, ...LOCALES],
                     this.handleLocaleChange,
                 )}
             </>
@@ -203,10 +207,9 @@ export class NumericInputBasicExample extends React.PureComponent<ExampleProps, 
         onChange: React.FormEventHandler,
     ) {
         return (
-            <Label>
-                {label}
+            <FormGroup label={label}>
                 <HTMLSelect {...{ value, onChange, options }} />
-            </Label>
+            </FormGroup>
         );
     }
 

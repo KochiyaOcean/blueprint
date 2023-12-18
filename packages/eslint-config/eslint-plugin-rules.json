@@ -4,7 +4,7 @@
         "block",
         {
             "pattern": "(!\n)?((@license)|(\\(c\\) ))?Copyright \\d{4} Palantir Technologies,? Inc\\. All rights reserved\\.",
-            "template": "!\n* (c) Copyright 2022 Palantir Technologies Inc. All rights reserved.\n"
+            "template": "!\n* (c) Copyright 2023 Palantir Technologies Inc. All rights reserved.\n"
         },
         2
     ],
@@ -57,5 +57,7 @@
     "react/no-direct-mutation-state": "error",
     "react/no-find-dom-node": "error",
     "react/no-string-refs": "error",
-    "react/self-closing-comp": "error"
+    "react/self-closing-comp": "error",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
 }

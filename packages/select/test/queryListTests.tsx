@@ -15,24 +15,24 @@
  */
 
 import { assert } from "chai";
-import { mount, ReactWrapper, shallow } from "enzyme";
+import { mount, type ReactWrapper, shallow } from "enzyme";
 import * as React from "react";
-import * as sinon from "sinon";
+import sinon from "sinon";
 
 import { Menu } from "@blueprintjs/core";
 
 import {
-    IQueryListState,
-    ItemListPredicate,
-    ItemListRenderer,
-    ItemPredicate,
+    type ItemListPredicate,
+    type ItemListRenderer,
+    type ItemPredicate,
     QueryList,
-    QueryListProps,
-    QueryListRendererProps,
+    type QueryListProps,
+    type QueryListRendererProps,
 } from "../src";
-import { Film, renderFilm, TOP_100_FILMS } from "../src/__examples__";
+import { type Film, renderFilm, TOP_100_FILMS } from "../src/__examples__";
+import type { QueryListState } from "../src/components/query-list/queryList";
 
-type FilmQueryListWrapper = ReactWrapper<QueryListProps<Film>, IQueryListState<Film>>;
+type FilmQueryListWrapper = ReactWrapper<QueryListProps<Film>, QueryListState<Film>>;
 
 describe("<QueryList>", () => {
     const testProps = {

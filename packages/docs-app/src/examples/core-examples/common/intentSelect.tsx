@@ -16,7 +16,7 @@
 
 import * as React from "react";
 
-import { Button, ControlGroup, HTMLSelect, Intent, Label } from "@blueprintjs/core";
+import { Button, ControlGroup, FormGroup, HTMLSelect, Intent } from "@blueprintjs/core";
 import { handleValueChange } from "@blueprintjs/docs-theme";
 
 const INTENTS = [
@@ -27,7 +27,7 @@ const INTENTS = [
     { label: "Danger", value: Intent.DANGER },
 ];
 
-export interface IIntentSelectProps {
+export interface IntentSelectProps {
     intent: Intent;
     label?: React.ReactNode;
     onChange: (intent: Intent) => void;
@@ -35,19 +35,18 @@ export interface IIntentSelectProps {
     showClearButton?: boolean;
 }
 
-export const IntentSelect: React.FC<IIntentSelectProps> = props => {
+export const IntentSelect: React.FC<IntentSelectProps> = props => {
     const handleChange = handleValueChange(props.onChange);
     const handleClear = React.useCallback(() => props.onChange("none"), []);
     return (
-        <Label>
-            {props.label}
+        <FormGroup label={props.label}>
             <ControlGroup>
                 <HTMLSelect value={props.intent} onChange={handleChange} options={INTENTS} fill={true} />
                 {props.showClearButton && (
                     <Button aria-label="Clear" disabled={props.intent === "none"} icon="cross" onClick={handleClear} />
                 )}
             </ControlGroup>
-        </Label>
+        </FormGroup>
     );
 };
 IntentSelect.defaultProps = {

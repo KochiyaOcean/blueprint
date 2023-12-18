@@ -14,24 +14,25 @@
  * limitations under the License.
  */
 
-import { IHeadingNode, IPageNode } from "@documentalist/client";
+import type { HeadingNode, PageNode } from "@documentalist/client";
 import { filter } from "fuzzaldrin-plus";
 import * as React from "react";
 
-import { Classes, Icon, MenuItem } from "@blueprintjs/core";
-import { ItemListPredicate, ItemRenderer, Omnibar } from "@blueprintjs/select";
+import { Classes, MenuItem } from "@blueprintjs/core";
+import { CaretRight } from "@blueprintjs/icons";
+import { type ItemListPredicate, type ItemRenderer, Omnibar } from "@blueprintjs/select";
 
-import { eachLayoutNode } from "../common/utils";
+import { eachLayoutNode } from "../common/documentalistUtils";
 
-export interface INavigatorProps {
+export interface NavigatorProps {
     /** Whether navigator is open. */
     isOpen: boolean;
 
     /** All potentially navigable items. */
-    items: Array<IPageNode | IHeadingNode>;
+    items: Array<PageNode | HeadingNode>;
 
     /** Callback to determine if a given item should be excluded. */
-    itemExclude?: (node: IPageNode | IHeadingNode) => boolean;
+    itemExclude?: (node: PageNode | HeadingNode) => boolean;
 
     /**
      * Callback invoked when the navigator is closed. Navigation is performed by
@@ -40,14 +41,14 @@ export interface INavigatorProps {
     onClose: () => void;
 }
 
-export interface INavigationSection {
+export interface NavigationSection {
     path: string[];
     route: string;
     title: string;
 }
 
-export class Navigator extends React.PureComponent<INavigatorProps> {
-    private sections: INavigationSection[];
+export class Navigator extends React.PureComponent<NavigatorProps> {
+    private sections: NavigationSection[] | undefined;
 
     public componentDidMount() {
         this.sections = [];
@@ -58,16 +59,17 @@ export class Navigator extends React.PureComponent<INavigatorProps> {
             }
             const { route, title } = node;
             const path = parents.map(p => p.title).reverse();
-            this.sections.push({ path, route, title });
+            this.sections!.push({ path, route, title });
         });
     }
 
     public render() {
-        if (!this.sections) {
+        if (this.sections === undefined) {
             return null;
         }
+
         return (
-            <Omnibar<INavigationSection>
+            <Omnibar<NavigationSection>
                 className="docs-navigator-menu"
                 inputProps={{ placeholder: "Search documentation pages and sections..." }}
                 itemListPredicate={this.filterMatches}
@@ -81,7 +83,7 @@ export class Navigator extends React.PureComponent<INavigatorProps> {
         );
     }
 
-    private filterMatches: ItemListPredicate<INavigationSection> = (query, items) =>
+    private filterMatches: ItemListPredicate<NavigationSection> = (query, items) =>
         filter(items, query, {
             key: "route",
             maxInners: items.length / 5,
@@ -90,14 +92,14 @@ export class Navigator extends React.PureComponent<INavigatorProps> {
             usePathScoring: true,
         });
 
-    private renderItem: ItemRenderer<INavigationSection> = (section, props) => {
+    private renderItem: ItemRenderer<NavigationSection> = (section, props) => {
         if (!props.modifiers.matchesPredicate) {
             return null;
         }
 
         // insert caret-right between each path element
         const pathElements = section.path.reduce<React.ReactChild[]>((elems, el) => {
-            elems.push(el, <Icon key={el} icon="caret-right" />);
+            elems.push(el, <CaretRight key={el} />);
             return elems;
         }, []);
         pathElements.pop();
@@ -116,14 +118,13 @@ export class Navigator extends React.PureComponent<INavigatorProps> {
                 multiline={true}
                 onClick={props.handleClick}
                 onFocus={props.handleFocus}
-                roleStructure="listoption"
                 text={text}
             />
         );
     };
 
     // updating location.hash will trigger hashchange event, which Documentation will receive and use to navigate.
-    private handleItemSelect = (item: INavigationSection) => {
+    private handleItemSelect = (item: NavigationSection) => {
         location.hash = item.route;
         this.props.onClose();
     };

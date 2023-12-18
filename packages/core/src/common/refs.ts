@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as React from "react";
+import type * as React from "react";
 
 export function isRefObject<T>(value: React.Ref<T> | undefined): value is React.RefObject<T> {
     return value != null && typeof value !== "function";
@@ -30,15 +30,10 @@ export function isRefCallback<T>(value: React.Ref<T> | undefined): value is Reac
 export function setRef<T>(refTarget: React.Ref<T> | undefined, ref: T | null): void {
     if (isRefObject<T>(refTarget)) {
         // HACKHACK: .current property is readonly
-        (refTarget.current as any) = ref;
+        (refTarget.current as T | null) = ref;
     } else if (isRefCallback(refTarget)) {
         refTarget(ref);
     }
-}
-
-/** @deprecated use mergeRefs() instead */
-export function combineRefs<T>(ref1: React.RefCallback<T>, ref2: React.RefCallback<T>) {
-    return mergeRefs(ref1, ref2);
 }
 
 /**
@@ -77,17 +72,3 @@ export function refHandler<T extends HTMLElement, K extends string>(
         setRef(refProp, ref);
     };
 }
-
-/* eslint-disable deprecation/deprecation */
-
-/** @deprecated use React.Ref */
-export type IRef<T = HTMLElement> = IRefObject<T> | IRefCallback<T>;
-
-// compatible with React.Ref type in @types/react@^16
-/** @deprecated use React.RefObject */
-export interface IRefObject<T = HTMLElement> {
-    current: T | null;
-}
-
-/** @deprecated use React.RefCallback */
-export type IRefCallback<T = HTMLElement> = (ref: T | null) => any;

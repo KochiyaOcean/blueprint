@@ -24,10 +24,11 @@ export {
     throttleEvent,
     throttleReactEventCallback,
 } from "./domUtils";
-export * from "./functionUtils";
+export { isFunction } from "./functionUtils";
 export * from "./jsUtils";
 export * from "./reactUtils";
-export { Extends } from "./typeUtils";
+export { isArrowKey, isKeyboardClick } from "./keyboardUtils";
+export type { Extends } from "./typeUtils";
 export { isDarkTheme } from "./isDarkTheme";
 
 // ref utils used to live in this folder, but got refactored and moved elsewhere.

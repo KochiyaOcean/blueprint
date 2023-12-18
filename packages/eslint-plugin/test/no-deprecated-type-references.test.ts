@@ -17,12 +17,12 @@
 // tslint:disable object-literal-sort-keys
 /* eslint-disable no-template-curly-in-string */
 
-import { TSESLint } from "@typescript-eslint/utils";
+import { RuleTester } from "@typescript-eslint/rule-tester";
 import dedent from "dedent";
 
 import { noDeprecatedTypeReferencesRule } from "../src/rules/no-deprecated-type-references";
 
-const ruleTester = new TSESLint.RuleTester({
+const ruleTester = new RuleTester({
     parser: require.resolve("@typescript-eslint/parser"),
     parserOptions: {
         ecmaFeatures: {
@@ -103,27 +103,8 @@ ruleTester.run("no-deprecated-type-references", noDeprecatedTypeReferencesRule, 
             `,
         },
 
-        // N.B. it is difficult to test fixes of multiple violations with ESLint's RuleTester, so we cannot have a test
-        // case with both `ISelectProps` and `ITimezoneItem`.
+        // N.B. it is difficult to test fixes of multiple violations with ESLint's RuleTester,
         // see https://github.com/eslint/eslint/issues/11187#issuecomment-470990425
-        {
-            code: dedent`
-                import { Select } from "@blueprintjs/select";
-                import { ITimezoneItem } from "@blueprintjs/timezone";
-                const MySelect = Select.ofType<ITimezoneItem>();
-            `,
-            errors: [
-                {
-                    messageId: "migration",
-                    data: { deprecatedTypeName: "ITimezoneItem", newTypeName: "TimezoneItem" },
-                },
-            ],
-            output: dedent`
-                import { Select } from "@blueprintjs/select";
-                import { TimezoneItem } from "@blueprintjs/timezone";
-                const MySelect = Select.ofType<TimezoneItem>();
-            `,
-        },
         {
             code: dedent`
                 import { ISelectProps } from "@blueprintjs/select";

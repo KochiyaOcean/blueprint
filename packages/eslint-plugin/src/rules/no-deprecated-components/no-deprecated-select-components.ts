@@ -2,12 +2,15 @@
  * (c) Copyright 2022 Palantir Technologies Inc. All rights reserved.
  */
 
-import { createNoDeprecatedComponentsRule } from "./createNoDeprecatedComponentsRule";
+import type { TSESLint } from "@typescript-eslint/utils";
 
-export const selectComponentsMigrationMapping = {
-    MultiSelect: "MultiSelect2",
-    Select: "Select2",
-    Suggest: "Suggest2",
+import { createNoDeprecatedComponentsRule, type DeprecatedComponentsConfig } from "./createNoDeprecatedComponentsRule";
+
+export const selectComponentsMigrationMapping: DeprecatedComponentsConfig = {
+    // listed in packages/select/src/components/deprecatedAliases.ts
+    MultiSelect2: "MultiSelect",
+    Select2: "Select",
+    Suggest2: "Suggest",
 };
 
 /**
@@ -15,8 +18,9 @@ export const selectComponentsMigrationMapping = {
  * of deprecated components from @blueprintjs/select. This is useful for incremental migration to
  * newer Blueprint APIs.
  */
-export const noDeprecatedSelectComponentsRule = createNoDeprecatedComponentsRule(
-    "no-deprecated-select-components",
-    ["@blueprintjs/select"],
-    selectComponentsMigrationMapping,
-);
+export const noDeprecatedSelectComponentsRule: TSESLint.RuleModule<string, unknown[]> =
+    createNoDeprecatedComponentsRule(
+        "no-deprecated-select-components",
+        ["@blueprintjs/select"],
+        selectComponentsMigrationMapping,
+    );

@@ -1,7 +1,8 @@
 node_modules/
 generated/
-generated-icons/
 lib/
 dist/
 /site/
 *.scss
+*.less
+yarn.lock

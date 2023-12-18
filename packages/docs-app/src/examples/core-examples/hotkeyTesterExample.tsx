@@ -17,7 +17,7 @@
 import * as React from "react";
 
 import { Code, getKeyComboString, KeyComboTag } from "@blueprintjs/core";
-import { Example, ExampleProps } from "@blueprintjs/docs-theme";
+import { Example, type ExampleProps } from "@blueprintjs/docs-theme";
 
 export interface HotkeyTesterState {
     combo: string;
@@ -61,7 +61,7 @@ export class HotkeyTesterExample extends React.PureComponent<ExampleProps, Hotke
         e.preventDefault();
         e.stopPropagation();
 
-        const combo = getKeyComboString(e.nativeEvent as KeyboardEvent);
+        const combo = getKeyComboString(e.nativeEvent);
         this.setState({ combo });
     };
 

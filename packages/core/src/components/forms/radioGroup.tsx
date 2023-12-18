@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
+import classNames from "classnames";
 import * as React from "react";
 
-import { AbstractPureComponent2, Classes } from "../../common";
+import { AbstractPureComponent, Classes, DISPLAYNAME_PREFIX, type OptionProps, type Props } from "../../common";
 import * as Errors from "../../common/errors";
-import { DISPLAYNAME_PREFIX, OptionProps, Props } from "../../common/props";
 import { isElementOfType } from "../../common/utils";
-import { Radio, RadioProps } from "./controls";
+import { RadioCard } from "../control-card/radioCard";
+import type { ControlProps } from "./controlProps";
+import { Radio, type RadioProps } from "./controls";
 
-// eslint-disable-next-line deprecation/deprecation
-export type RadioGroupProps = IRadioGroupProps;
-/** @deprecated use RadioGroupProps */
-export interface IRadioGroupProps extends Props {
+export interface RadioGroupProps extends Props {
     /**
      * Radio elements. This prop is mutually exclusive with `options`.
      */
@@ -79,7 +78,7 @@ function nextName() {
  *
  * @see https://blueprintjs.com/docs/#core/components/radio.radiogroup
  */
-export class RadioGroup extends AbstractPureComponent2<RadioGroupProps> {
+export class RadioGroup extends AbstractPureComponent<RadioGroupProps> {
     public static displayName = `${DISPLAYNAME_PREFIX}.RadioGroup`;
 
     // a unique name for this group, which can be overridden by `name` prop.
@@ -88,7 +87,7 @@ export class RadioGroup extends AbstractPureComponent2<RadioGroupProps> {
     public render() {
         const { label } = this.props;
         return (
-            <div className={this.props.className}>
+            <div className={classNames(Classes.RADIO_GROUP, this.props.className)}>
                 {label == null ? null : <label className={Classes.LABEL}>{label}</label>}
                 {Array.isArray(this.props.options) ? this.renderOptions() : this.renderChildren()}
             </div>
@@ -103,8 +102,14 @@ export class RadioGroup extends AbstractPureComponent2<RadioGroupProps> {
 
     private renderChildren() {
         return React.Children.map(this.props.children, child => {
-            if (isElementOfType(child, Radio)) {
-                return React.cloneElement(child, this.getRadioProps(child.props as OptionProps));
+            if (isElementOfType(child, Radio) || isElementOfType(child, RadioCard)) {
+                return React.cloneElement(
+                    // Need this cast here to suppress a TS error caused by differing `ref` types for the Radio and
+                    // RadioCard components. We aren't injecting a ref, so we don't need to be strict about that
+                    // incompatibility.
+                    child as React.ReactElement<ControlProps>,
+                    this.getRadioProps(child.props as OptionProps),
+                );
             } else {
                 return child;
             }
@@ -117,7 +122,7 @@ export class RadioGroup extends AbstractPureComponent2<RadioGroupProps> {
         ));
     }
 
-    private getRadioProps(optionProps: OptionProps): RadioProps {
+    private getRadioProps(optionProps: OptionProps): Omit<RadioProps, "ref"> {
         const { name } = this.props;
         const { className, disabled, value } = optionProps;
         return {

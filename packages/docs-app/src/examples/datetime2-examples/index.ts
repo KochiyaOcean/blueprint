@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Palantir Technologies, Inc. All rights reserved.
+ * Copyright 2023 Palantir Technologies, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
-export { DateInput2Example } from "./dateInput2Example";
-export { DateRangeInput2Example } from "./dateRangeInput2Example";
-export { TimezoneSelectExample } from "./timezoneSelectExample";
+export { DateInput3Example } from "./dateInput3Example";
+export { DatePicker3Example } from "./datePicker3Example";
+export { DatePicker3LocalizedExample } from "./datePicker3LocalizedExample";
+export { DatePicker3ModifierExample } from "./datePicker3ModifierExample";
+export { DateRangeInput3Example } from "./dateRangeInput3Example";
+export { DateRangePicker3Example } from "./dateRangePicker3Example";

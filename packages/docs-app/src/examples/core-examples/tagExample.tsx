@@ -17,11 +17,11 @@
 import * as React from "react";
 
 import { Button, H5, Intent, Switch, Tag } from "@blueprintjs/core";
-import { Example, ExampleProps, handleBooleanChange } from "@blueprintjs/docs-theme";
+import { Example, type ExampleProps, handleBooleanChange } from "@blueprintjs/docs-theme";
 
 import { IntentSelect } from "./common/intentSelect";
 
-export interface ITagExampleState {
+export interface TagExampleState {
     active: boolean;
     fill: boolean;
     icon: boolean;
@@ -35,8 +35,8 @@ export interface ITagExampleState {
     tags: string[];
 }
 
-export class TagExample extends React.PureComponent<ExampleProps, ITagExampleState> {
-    public state: ITagExampleState = {
+export class TagExample extends React.PureComponent<ExampleProps, TagExampleState> {
+    public state: TagExampleState = {
         active: false,
         fill: false,
         icon: false,

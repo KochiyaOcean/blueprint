@@ -16,19 +16,19 @@
 
 import * as React from "react";
 
-import { H5, Intent, ProgressBar, Slider, Switch } from "@blueprintjs/core";
-import { Example, ExampleProps, handleBooleanChange } from "@blueprintjs/docs-theme";
+import { H5, type Intent, ProgressBar, Slider, Switch } from "@blueprintjs/core";
+import { Example, type ExampleProps, handleBooleanChange } from "@blueprintjs/docs-theme";
 
 import { IntentSelect } from "./common/intentSelect";
 
-export interface IProgressExampleState {
+export interface ProgressExampleState {
     hasValue: boolean;
     intent?: Intent;
     value: number;
 }
 
-export class ProgressExample extends React.PureComponent<ExampleProps, IProgressExampleState> {
-    public state: IProgressExampleState = {
+export class ProgressExample extends React.PureComponent<ExampleProps, ProgressExampleState> {
+    public state: ProgressExampleState = {
         hasValue: false,
         value: 0.7,
     };

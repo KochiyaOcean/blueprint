@@ -14,23 +14,22 @@
  * limitations under the License.
  */
 
-import { INpmPackage } from "@documentalist/client";
+import type { NpmPackageInfo } from "@documentalist/client";
 import * as React from "react";
 
-import { Classes, HotkeysTarget2, Intent, Menu, MenuItem, NavbarHeading, Tag } from "@blueprintjs/core";
+import { Classes, HotkeysTarget2, type Intent, Menu, MenuItem, NavbarHeading, Popover, Tag } from "@blueprintjs/core";
 import { NavButton } from "@blueprintjs/docs-theme";
-import { Popover2 } from "@blueprintjs/popover2";
 
 import { Logo } from "./logo";
 
-export interface INavHeaderProps {
+export interface NavHeaderProps {
     onToggleDark: (useDark: boolean) => void;
     useDarkTheme: boolean;
     useNextVersion: boolean;
-    packageData: INpmPackage;
+    packageInfo: NpmPackageInfo;
 }
 
-export class NavHeader extends React.PureComponent<INavHeaderProps> {
+export class NavHeader extends React.PureComponent<NavHeaderProps> {
     public render() {
         const { useDarkTheme } = this.props;
         return (
@@ -46,7 +45,7 @@ export class NavHeader extends React.PureComponent<INavHeaderProps> {
             >
                 <>
                     <div className="docs-nav-title">
-                        <a className="docs-logo" href="/">
+                        <a className="docs-logo" href="/" aria-label="docs home">
                             <Logo />
                         </a>
                         <div>
@@ -76,7 +75,7 @@ export class NavHeader extends React.PureComponent<INavHeaderProps> {
 
     private renderVersionsMenu() {
         const { useNextVersion } = this.props;
-        const { version, nextVersion, versions } = this.props.packageData;
+        const { version, nextVersion, versions } = this.props.packageInfo;
         if (versions.length === 1) {
             return <div className={Classes.TEXT_MUTED}>v{versions[0]}</div>;
         }
@@ -102,11 +101,11 @@ export class NavHeader extends React.PureComponent<INavHeaderProps> {
                 return <MenuItem href={href} intent={intent} key={v} text={v} />;
             });
         return (
-            <Popover2 content={<Menu className="docs-version-list">{releaseItems}</Menu>} placement="bottom">
+            <Popover content={<Menu className="docs-version-list">{releaseItems}</Menu>} placement="bottom">
                 <Tag interactive={true} minimal={true} round={true} rightIcon="caret-down">
                     v{major(currentVersion)}
                 </Tag>
-            </Popover2>
+            </Popover>
         );
     }
 

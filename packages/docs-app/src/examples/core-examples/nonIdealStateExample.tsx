@@ -18,20 +18,20 @@ import * as React from "react";
 
 import {
     Button,
-    ButtonGroup,
+    FormGroup,
     H5,
-    Label,
     NonIdealState,
     NonIdealStateIconSize,
+    SegmentedControl,
     Spinner,
     Switch,
 } from "@blueprintjs/core";
-import { Example, ExampleProps, handleBooleanChange } from "@blueprintjs/docs-theme";
-import { IconName } from "@blueprintjs/icons";
+import { Example, type ExampleProps, handleBooleanChange } from "@blueprintjs/docs-theme";
+import type { IconName } from "@blueprintjs/icons";
 
 import { IconSelect } from "./common/iconSelect";
-import { Layout, LayoutSelect } from "./common/layoutSelect";
-import { Size, SizeSelect } from "./common/sizeSelect";
+import { type Layout, LayoutSelect } from "./common/layoutSelect";
+import { type Size, SizeSelect } from "./common/sizeSelect";
 
 const sizeToNonIdealStateIconSize: Record<Size, NonIdealStateIconSize> = {
     large: NonIdealStateIconSize.STANDARD,
@@ -45,18 +45,18 @@ const nonIdealStateIconSizeToSize: Record<NonIdealStateIconSize, Size> = Object.
 
 const defaultIcon: IconName = "search";
 
-export interface INonIdealStateExampleState {
+export interface NonIdealStateExampleState {
     icon: IconName;
     iconSize: NonIdealStateIconSize;
     layout: Layout;
     showAction: boolean;
     showDescription: boolean;
     showTitle: boolean;
-    visual: VisualKind;
+    visual: NonIdealStateVisualKind;
 }
 
-export class NonIdealStateExample extends React.PureComponent<ExampleProps, INonIdealStateExampleState> {
-    public state: INonIdealStateExampleState = {
+export class NonIdealStateExample extends React.PureComponent<ExampleProps, NonIdealStateExampleState> {
+    public state: NonIdealStateExampleState = {
         icon: defaultIcon,
         iconSize: NonIdealStateIconSize.STANDARD,
         layout: "vertical",
@@ -78,14 +78,14 @@ export class NonIdealStateExample extends React.PureComponent<ExampleProps, INon
 
     private handleSizeChange = (size: Size) => this.setState({ iconSize: sizeToNonIdealStateIconSize[size] });
 
-    private handleVisualKindChange = (visual: VisualKind) => this.setState({ visual });
+    private handleVisualKindChange = (visual: NonIdealStateVisualKind) => this.setState({ visual });
 
     public render() {
         const options = (
             <>
                 <H5>Props</H5>
                 <LayoutSelect layout={this.state.layout} onChange={this.handleLayoutChange} />
-                <VisualSelect visual={this.state.visual} onChange={this.handleVisualKindChange} />
+                <NonIdealStateVisualSelect visual={this.state.visual} onChange={this.handleVisualKindChange} />
                 <IconSelect
                     disabled={this.state.visual !== "icon"}
                     iconName={this.state.icon}
@@ -132,23 +132,27 @@ export class NonIdealStateExample extends React.PureComponent<ExampleProps, INon
     }
 }
 
-type VisualKind = "icon" | "spinner";
+type NonIdealStateVisualKind = "icon" | "spinner";
 
 /** Button radio group to switch between icon and spinner visuals. */
-const VisualSelect: React.FC<{ visual: VisualKind; onChange: (option: VisualKind) => void }> = ({
-    visual,
-    onChange,
-}) => {
-    const handleIcon = React.useCallback(() => onChange("icon"), []);
-    const handleSpinner = React.useCallback(() => onChange("spinner"), []);
+const NonIdealStateVisualSelect: React.FC<{
+    visual: NonIdealStateVisualKind;
+    onChange: (option: NonIdealStateVisualKind) => void;
+}> = ({ visual, onChange }) => {
+    const handleChange = React.useCallback((value: string) => onChange(value as NonIdealStateVisualKind), [onChange]);
 
     return (
-        <Label>
-            Visual
-            <ButtonGroup fill={true} style={{ marginTop: 5 }}>
-                <Button active={visual === "icon"} text="Icon" onClick={handleIcon} />
-                <Button active={visual === "spinner"} text="Spinner" onClick={handleSpinner} />
-            </ButtonGroup>
-        </Label>
+        <FormGroup label="Visual">
+            <SegmentedControl
+                fill={true}
+                onValueChange={handleChange}
+                options={[
+                    { label: "Icon", value: "icon" },
+                    { label: "Spinner", value: "spinner" },
+                ]}
+                small={true}
+                value={visual}
+            />
+        </FormGroup>
     );
 };

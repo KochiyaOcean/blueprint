@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Palantir Technologies, Inc. All rights reserved.
+ * Copyright 2023 Palantir Technologies, Inc. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,35 +14,23 @@
  */
 
 require("@blueprintjs/test-commons/bootstrap");
-// const { generateIsomorphicTests } = require("@blueprintjs/test-commons");
+const { add } = require("date-fns");
 
-// const DateTime2 = require("../lib/cjs");
+const { generateIsomorphicTests } = require("@blueprintjs/test-commons");
 
-describe("DateTime2 isomorphic rendering", () => {
-    it("No tests because this package imports ES modules, which are hard to use with Mocha");
+const DateTime = require("../lib/cjs");
 
-    // const formatProps = {
-    //     formatDate: date => date.toLocaleString(),
-    //     parseDate: str => new Date(Date.parse(str)),
-    // };
-
-    // generateIsomorphicTests(DateTime2, {
-    //     DateInput2: {
-    //         props: {
-    //             ...formatProps,
-    //             value: new Date().toISOString(),
-    //             onChange: noop,
-    //         },
-    //     },
-    //     TimezoneSelect: {
-    //         props: {
-    //             value: "Etc/UTC",
-    //             onChange: noop,
-    //         },
-    //     },
-    // });
+describe("@blueprintjs/datetime2 isomorphic rendering", () => {
+    generateIsomorphicTests(
+        DateTime,
+        {
+            DatePicker3: {},
+            DateInput3: {},
+            DateRangeInput3: {},
+            DateRangePicker3: {},
+        },
+        {
+            excludedSymbols: ["DateInput2", "DateInput2MigrationUtils", "DateRangeInput2", "TimezoneSelect"],
+        },
+    );
 });
-
-// function noop() {
-//     // do nothing
-// }

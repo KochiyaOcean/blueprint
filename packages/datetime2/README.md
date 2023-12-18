@@ -4,28 +4,21 @@
 
 Blueprint is a React UI toolkit for the web.
 
-This package contains a collection of React components for working with dates
-and times. These are modern variants of the components available in the
-`@blueprintjs/datetime` package; they will become the standard date & time
-components in a future major version of Blueprint.
+This package contains next-generation components for interacting with dates & times.
 
-Compared to their "V1" counterparts, these components:
-- use Popover2 instead of Popover under the hood
-- have better timezone awareness
-- utilize lightweight dependencies for manipulating dates and displaying
-  the list of available timezones
-- no longer use the deprecated moment.js library
+Compared to the "V1" components in @blueprintjs/datetime, the "V3" components in this package:
 
-At the moment, `@blueprintjs/datetime` is a dependency of this
-package, as it delegates to the `<DatePicker>` and `<DateRangePicker>`
-implementation exported from there. When these "V2" components graduate
-to become the standard API, all Blueprint date/time components will
-be collected into a single package, `@blueprintjs/datetime@5.x`.
+-   use [react-day-picker](https://react-day-picker.js.org/) v8 instead of v7 (this unblocks React 18 compatibility)
+-   are easier to internationalize & localize since date-fns is now a dependency (instead of `localeUtils`, you can specify a locale code and we'll automatically load the date-fns locale object)
 
-## Installation
+This package also contains legacy APIs which are re-exported aliases for components from @blueprintjs/datetime v5.x.
+These "V2" names are backwards-compatible with @blueprintjs/datetime2 v0.x.
 
-```
-npm install --save @blueprintjs/datetime2
-```
+To migrate to the latest "V3" components, follow the [react-day-picker v8 migration guide](https://github.com/palantir/blueprint/wiki/react-day-picker-8-migration).
+
+Note that @blueprintjs/datetime2 will transitively install multiple versions of react-day-picker.
+These two copies of react-day-picker can happily exist together in a single JS bundle, and with the help of tree-shaking,
+you can avoid bundling both if you _only_ use the deprecated "V1" / "V2" datetime components or _only_ use the new
+"V3" APIs.
 
 ### [Full Documentation](http://blueprintjs.com/docs) | [Source Code](https://github.com/palantir/blueprint)

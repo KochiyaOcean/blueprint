@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import * as React from "react";
+import type * as React from "react";
 
 import type { IconName } from "@blueprintjs/icons";
 
-import { Intent } from "./intent";
+import type { Intent } from "./intent";
 
-export const DISPLAYNAME_PREFIX = "Blueprint4";
+export const DISPLAYNAME_PREFIX = "Blueprint5";
 
 /**
  * Alias for all valid HTML props for `<div>` element.
@@ -43,23 +43,16 @@ export type MaybeElement = JSX.Element | false | null | undefined;
 
 /**
  * A shared base interface for all Blueprint component props.
- *
- * @deprecated use Props
  */
-export interface IProps {
+export interface Props {
     /** A space-delimited list of class names to pass along to a child element. */
     className?: string;
 }
-// eslint-disable-next-line deprecation/deprecation
-export type Props = IProps;
 
-/** @deprecated use IntentProps */
-export interface IIntentProps {
+export interface IntentProps {
     /** Visual intent color to apply to element. */
     intent?: Intent;
 }
-// eslint-disable-next-line deprecation/deprecation
-export type IntentProps = IIntentProps;
 
 /**
  * Interface for a clickable action, such as a button or menu item.
@@ -83,66 +76,46 @@ export interface ActionProps<T extends HTMLElement = HTMLElement> extends Intent
     /** Action text. Can be any single React renderable. */
     text?: React.ReactNode;
 }
-/**
- * @deprecated use ActionProps
- */
-export type IActionProps = ActionProps;
 
-/**
- * Interface for a link, with support for customizing target window.
- *
- * @deprecated use LinkProps
- */
-export interface ILinkProps {
+/** Interface for a link, with support for customizing target window. */
+export interface LinkProps {
     /** Link URL. */
     href?: string;
 
     /** Link target attribute. Use `"_blank"` to open in a new window. */
-    target?: string;
-}
-// eslint-disable-next-line deprecation/deprecation
-export type LinkProps = ILinkProps;
-
-/**
- * Interface for a controlled input.
- *
- * @deprecated use ControlledProps2.
- */
-export interface IControlledProps {
-    /** Initial value of the input, for uncontrolled usage. */
-    defaultValue?: string;
-
-    /** Change event handler. Use `event.target.value` for new value. */
-    onChange?: React.FormEventHandler<HTMLElement>;
-
-    /** Form value of the input, for controlled usage. */
-    value?: string;
-}
-
-export interface IControlledProps2 {
-    /** Initial value of the input, for uncontrolled usage. */
-    defaultValue?: string;
-
-    /** Form value of the input, for controlled usage. */
-    value?: string;
-}
-export type ControlledProps2 = IControlledProps2;
-
-/**
- * @deprecated will be removed in Blueprint v5.0, where components will use `ref` prop instead
- */
-export interface IElementRefProps<E extends HTMLElement> {
-    /** A ref handler or a ref object that receives the native HTML element rendered by this component. */
-    elementRef?: React.Ref<E>;
+    target?: React.HTMLAttributeAnchorTarget;
 }
 
 /**
- * An interface for an option in a list, such as in a `<select>` or `RadioGroup`.
- * These props can be spread directly to an `<option>` or `<Radio>` element.
- *
- * @deprecated use OptionProps
+ * Interface for a controlled or uncontrolled component, typically a form control.
  */
-export interface IOptionProps extends Props {
+export interface ControlledValueProps<T, E extends HTMLElement = HTMLElement> {
+    /**
+     * Initial value for uncontrolled usage. Mutually exclusive with `value` prop.
+     */
+    defaultValue?: T;
+
+    /**
+     * Controlled value. Mutually exclusive with `defaultValue` prop.
+     */
+    value?: T;
+
+    /**
+     * Callback invoked when the component value changes, typically via user interaction, in both controlled and
+     * uncontrolled mode.
+     *
+     * Using this prop instead of `onChange` can help avoid common bugs in React 16 related to Event Pooling
+     * where developers forget to save the text value from a change event or call `event.persist()`.
+     *
+     * @see https://legacy.reactjs.org/docs/legacy-event-pooling.html
+     */
+    onValueChange?: (value: T, targetElement: E | null) => void;
+}
+
+/** @deprecated use `ControlledValueProps` */
+export type ControlledProps = Omit<ControlledValueProps<string, HTMLInputElement>, "onChange">;
+
+export interface OptionProps<T extends string | number = string | number> extends Props {
     /** Whether this option is non-interactive. */
     disabled?: boolean;
 
@@ -150,21 +123,21 @@ export interface IOptionProps extends Props {
     label?: string;
 
     /** Value of this option. */
-    value: string | number;
+    value: T;
 }
-// eslint-disable-next-line deprecation/deprecation
-export type OptionProps = IOptionProps;
 
 /** A collection of curated prop keys used across our Components which are not valid HTMLElement props. */
 const INVALID_PROPS = [
     "active",
     "alignText",
-    "asyncControl", // InputGroupProps2
+    "asyncControl", // InputGroupProps
     "containerRef",
     "current",
-    "elementRef",
+    "elementRef", // not used anymore in Blueprint v5.x, but kept for backcompat if consumers use this naming pattern
+    "ellipsizeText", // ButtonProps
     "fill",
     "icon",
+    "iconSize",
     "inputClassName",
     "inputRef",
     "intent",
@@ -174,17 +147,19 @@ const INVALID_PROPS = [
     "leftElement",
     "leftIcon",
     "minimal",
-    "onRemove", // ITagProps, ITagInputProps
-    "outlined", // IButtonProps
-    "panel", // ITabProps
-    "panelClassName", // ITabProps
+    "onRemove", // TagProps, TagInputProps
+    "outlined", // ButtonProps
+    "panel", // TabProps
+    "panelClassName", // TabProps
     "popoverProps",
     "rightElement",
     "rightIcon",
     "round",
+    "size",
     "small",
     "tagName",
     "text",
+    "textClassName", // ButtonProps
 ];
 
 /**

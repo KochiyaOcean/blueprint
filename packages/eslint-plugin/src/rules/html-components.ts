@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { AST_NODE_TYPES, TSESLint, TSESTree } from "@typescript-eslint/utils";
+import { AST_NODE_TYPES, type TSESLint, type TSESTree } from "@typescript-eslint/utils";
 
 import { addImportToFile } from "./utils/addImportToFile";
 import { createRule } from "./utils/createRule";
@@ -31,7 +31,7 @@ export const htmlComponentsRule = createRule<[], MessageIds>({
     meta: {
         docs: {
             description: "Enforce usage of Blueprint components over JSX intrinsic elements.",
-            recommended: "error",
+            recommended: "recommended",
             requiresTypeChecking: false,
         },
         fixable: "code",
