@@ -30,7 +30,7 @@ $menu-item-selected-icon-spacing: $pt-spacing * 0.5;
 $menu-item-indent: $pt-icon-size-standard + $menu-item-selected-icon-spacing * 2;
 
 $menu-background-color: rgba($white, 0.9) !default;
-$dark-menu-background-color: $dark-gray3 !default;
+$dark-menu-background-color: rgba($dark-gray3, 0.9) !default;
 
 $menu-item-color-hover: rgba($gray3, 0.15) !default;
 $menu-item-color-active: rgba($gray3, 0.3) !default;
